@@ -928,6 +928,15 @@ def chrome_checks(html_path, chrome, js_value, shot):
         # 被判成「压根没出现」，而它们明明是列了 SKIP 的。
         return ([], ['B5/V3/V5/V7/V8 未执行：--chrome 未给或路径不存在，浏览器判据本次整体'
                      '跳过（不计入通过）'], [])
+    # 交给 Chrome 的路径一律绝对化——**只在这一处做**，别回各调用点再补一次。
+    # 依据（2026-09-20 本机 Windows 实测）：Chrome 不认相对路径的 --screenshot，
+    # 报 `Failed to write file …: 拒绝访问`；同一命令换绝对路径即正常写入（395 KB）。
+    # file:/// 同理是 URL 语义、不按 CWD 解析——这条平时走不到（probe_copy 成功时用的
+    # 已是 tmpdir 绝对路径），只有注入失败、回落到 html_path 那个分支才会露出来。
+    # Linux / macOS 上恰好能过（Chrome 按 CWD 解析相对路径），所以这是只在 Windows 炸的坑；
+    # 而「只在某个平台炸」的前提是「那个平台也真的在跑这批判据」——见 ci.yml 的覆盖注释。
+    html_path = os.path.abspath(html_path) if html_path else html_path
+    shot = os.path.abspath(shot) if shot else shot
     raw = read_text(html_path)
     html = raw
     # 探针副本落在一次性唯一目录：并发两跑 / 中断残留不再互相覆盖

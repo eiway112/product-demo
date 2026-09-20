@@ -58,8 +58,11 @@ python assets/check_demo.py demo.html --profile profiles/<产品>/profile.json -
 
 # 2b) 再跑一遍浏览器判据（无 console 报错、脚本真的执行了、没有横向溢出、点了有反应）
 #     --js-value IXRDY 是模板契约 C6 的取证锚点；不给它，JS 执行那条判据只会列 SKIP
+#     --chrome 的路径不必自己猜：find_chrome.py 枚举各平台标准安装位置、实测存在性后打印
 python assets/check_demo.py demo.html --profile profiles/<产品>/profile.json --img 2 \
-  --chrome "/path/to/chrome.exe" --js-value IXRDY --expect pass=28,fail=0,skip=3
+  --chrome "$(python assets/find_chrome.py)" --js-value IXRDY --expect pass=28,fail=0,skip=3
+#     （上面是 bash/Linux/macOS；Windows 的 PowerShell 里写
+#       $c = python assets/find_chrome.py  再  --chrome "$c"）
 
 # 3) 负向测试：每条判据注入一处故障，断言必须被拦下；末行还判「注入覆盖率」
 python assets/negative_test.py demo.html --profile profiles/<产品>/profile.json --img 2
@@ -76,8 +79,9 @@ python assets/audit_body.py --self-test
 ```
 
 **为什么要带 `--expect`**：浏览器那组判据在 `--chrome` 路径不可用时**全部列 SKIP 且退出码仍为 0**。
-CI 里 `$(command -v google-chrome)` 返回空串就是这种情形——看起来全绿，实际一条浏览器判据都没跑。
-断言期望条数是唯一能把它堵住的办法。
+定位命令返回空串就是这种情形——看起来全绿，实际一条浏览器判据都没跑。
+断言期望条数是唯一能把它堵住的办法。CI 与本地统一用 `assets/find_chrome.py` 定位浏览器：
+**它找不到就直接 `exit 1`**，不给「定位失败 → 整组 SKIP → 退出码 0」留缝。
 
 辅助脚本：
 
@@ -233,9 +237,10 @@ SECURITY.md                     安全策略（含文件系统行为）
 manifest.json                   发布元数据（版本、兼容性证据、以及缺哪些证据）
 .gitattributes                  钉住 LF——行尾漂移会让「逐字节回读」变成假绿
 .gitignore                      默认排除 profiles/*，只放行下划线开头的基础设施目录
-.github/workflows/ci.yml        CI（首跑已回读；两个 Windows 专属坑见文件顶部）
+.github/workflows/ci.yml        CI（首跑已回读；浏览器判据覆盖 Linux+Windows；坑见文件顶部）
 assets/
   template_skeleton.html        版式层骨架（品牌占位符 + 一个交互件插槽）
+  find_chrome.py                跨平台定位 Chrome/Chromium（CI 与本地共用的唯一定位入口）
   interactions/
     calculator.html             交互件模板：档位对照器（计算型）
     catalog.html                交互件模板：样例演示器（能力型）
@@ -245,7 +250,8 @@ assets/
   audit_body.py                 本体清洁度扫描（产品词 + 结构签名 + C5 零中文）
   extract_assets.py             素材提取器（既有单页 HTML → 产品配置素材）
   measure_density.py            量化对照 + 文本口径与词条匹配的单一事实来源
-  release_check.py              发布闸门（版本三处一致 / 件齐 / 无残留 / 示例会入库）
+  release_check.py              发布闸门 RC1–RC7（版本一致 / 件齐 / 无残留 / 示例会入库 /
+                                运行态副本逐文件一致 / CI 配置自洽）
   interaction_patterns.md       交互形态分类表 + 判据阈值与依据
 profiles/
   _模板/                         新建产品配置的起点（基础设施，随库入库）
@@ -276,13 +282,21 @@ profiles/
   ② `run:` 块里的反斜杠续行在 Windows 默认 shell（pwsh）不是续行符，实测直接 `ParserError`。
   **本机没提前拦住，是因为本机是中文 Windows、码页 cp936 能编码中文——「CI 本地等价首跑
   全绿」是假绿**。两条都已修，并由 RC7 装了判据（CI 配置退回原状时本地就 FAIL，不必等 runner）。
-  **未闭合处：Windows 腿的修复结果尚未经 runner 复验**（改后未推送）。
-- **`--shot` 给相对路径时，Windows 上 Chrome 写不出图**：V7 会报「截图未生成或为空」。
-  实测同一命令：相对路径 → `Failed to write file …: 拒绝访问`；改绝对路径即正常落盘
-  （395 KB）。CI 不受影响——浏览器判据只在 Linux 腿跑（Chrome 按 CWD 解析相对路径，能过）。
-  但本机若想在 Windows 上跑浏览器判据，`--shot` 必须给绝对路径。
-- **浏览器判据只在 Linux 上跑**（runner 预装 Chrome）；其他平台那组列 SKIP，
-  但期望条数是按平台分别断言的，所以「全列 SKIP 也算过」在那里不成立。
+  **未闭合处：Windows 腿的修复结果尚未经 runner 复验**——v1.8.2 的编码修复与
+  v1.8.3 的「Windows 纳入浏览器判据覆盖」都改完未推送；推送并回读 runner 结论后，
+  这一段按实测更新（本仓的老规矩：不把「配置已提交」当成「已经验证」）。
+- **v1.8.3 已修：`--shot` 给相对路径时，Windows 上 Chrome 写不出图**（V7 报「截图未生成或为空」）。
+  实测同一命令：相对路径 → `Failed to write file …: 拒绝访问`；改绝对路径即正常落盘（395 KB）。
+  修法是在 `chrome_checks` 入口**单点**绝对化，不在各调用处补——否则下一个新加的参数会再踩一次。
+  2026-09-20 本机复核：相对 `--shot` 已可落盘（394509 / 431304 字节），判定 29/0/2 与 30/0/1。
+- **浏览器判据覆盖 Linux + Windows**（v1.8.3 起；两个 runner 镜像都预装 Google Chrome）。
+  补上 Windows 的理由就是上面那条：缺陷本身只有一行，却能潜伏到有人在**本机**手动撞上才发现——
+  因为这条腿从来没跑过浏览器判据。**覆盖不到的平台，缺陷不会被发现。**
+  macOS 腿仍跳过该组：那会一次引入「新平台 + 新路径」两个未实测变量，留待单独一轮。
+  定位统一走 `assets/find_chrome.py`（枚举表可用 `--list` 本地实测），找不到即 `exit 1`，
+  不留「整组 SKIP 仍算过」的缝。
+  另：`--chrome` 在 `ci.yml` 里写 `${{ env.CHROME }}` 而不是 `$CHROME` ——
+  后者在 bash 成立、在 pwsh 展开成空串，正好落进上面那个「整组 SKIP」的形态。
 - **规格型 / 流程型交互件模板未建**，需要这两类的产品走 gap 处置（见交互形态表）。
 - **浏览器判据需 Chromium 系**：其他内核的布局未实测。
 - **密度阈值是经验值，不是标准**：取值与依据写在 `check_demo.py` 顶部的判据参数区，

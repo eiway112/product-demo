@@ -1,6 +1,6 @@
 {
   "name": "product-demo",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "owner": "eiway112",
   "updated_at": "2026-09-20",
   "status": "released",
@@ -27,12 +27,12 @@
       {
         "operating_system": "Windows",
         "python": [
-          "3.13.14"
+          "3.13.12"
         ],
         "environment": "local skill workspace",
         "browser": "Chrome (headless=new)",
         "scope": "full pipeline on bundled profiles (profiles/_示例, profiles/_示例-带图, profiles/_示例-inline): build, offline checks, browser checks with screenshot, negative injection, body cleanliness, release gate",
-        "evidence": "2026-09-20 本机实测（v1.7.0）：_示例 离线 PASS 24 / FAIL 0 / SKIP 3、带 chrome+js-value PASS 28 / SKIP 3、带 chrome+shot PASS 29 / SKIP 2；_示例-带图 离线 25 / 0 / 2、带 chrome+shot 30 / 0 / 1；_示例-inline（inline 装配）离线 24 / 0 / 3、带 chrome+shot 29 / 0 / 2，均为 0 FAIL；负向测试 29 条用例 0 问题（_示例 22 通过 7 跳过 / _示例-带图 24 通过 5 跳过 / _示例-inline 22 通过 7 跳过），其中 V9（关键数字回指）与 I4（装配位置）为本版新增注入；CY 覆盖率 21 条判据条条有注入证明；判据单测 18/18；本体扫描 0 命中。注：本机跑浏览器判据时 --shot 必须给绝对路径（见 missing_native_evidence），v1.8.2 复核时以绝对路径复现得 29 / 0 / 2 与 30 / 0 / 1"
+        "evidence": "2026-09-20 本机实测（v1.7.0）：_示例 离线 PASS 24 / FAIL 0 / SKIP 3、带 chrome+js-value PASS 28 / SKIP 3、带 chrome+shot PASS 29 / SKIP 2；_示例-带图 离线 25 / 0 / 2、带 chrome+shot 30 / 0 / 1；_示例-inline（inline 装配）离线 24 / 0 / 3、带 chrome+shot 29 / 0 / 2，均为 0 FAIL；负向测试 29 条用例 0 问题（_示例 22 通过 7 跳过 / _示例-带图 24 通过 5 跳过 / _示例-inline 22 通过 7 跳过），其中 V9（关键数字回指）与 I4（装配位置）为本版新增注入；CY 覆盖率 21 条判据条条有注入证明；判据单测 18/18；本体扫描 0 命中。v1.8.3 复核：--shot 已可走相对路径（绝对化收在 chrome_checks 入口单点），_示例 落盘 394509 字节 / 判定 29 / 0 / 2，_示例-带图 落盘 431304 字节 / 判定 30 / 0 / 1，与 ci.yml 的 --expect 逐项一致"
       },
       {
         "operating_system": "Linux, macOS (GitHub Actions runners)",
@@ -43,7 +43,7 @@
         "environment": "GitHub Actions: ubuntu-latest / macos-latest",
         "browser": "google-chrome（ubuntu runner 预装）",
         "scope": "全链路跑在随库三份示例上（.github/workflows/ci.yml）：发布闸门、出件、离线判据、浏览器判据含截图、负向注入、本体清洁度",
-        "evidence": "2026-09-20 CI 首跑（run 35516492259 / commit e6a0ae1 / v1.8.1）：ubuntu 与 macos 四条腿全绿，含浏览器判据与截图，--expect 契约（pass=29/30）成立。同批 windows-latest 两条腿在第 4 步失败（runner stdout 编码 cp1252 编不出中文），根因与修法见 CHANGELOG v1.8.2；因此本条目证明的是 e6a0ae1 时点的 Unix 侧能力，改动后的复验仍待推送后由 runner 完成"
+        "evidence": "2026-09-20 CI 首跑（run 35516492259 / commit e6a0ae1 / v1.8.1）：ubuntu 与 macos 四条腿全绿，含浏览器判据与截图，--expect 契约（pass=29/30）成立。同批 windows-latest 两条腿在第 4 步失败（runner stdout 编码 cp1252 编不出中文），根因与修法见 CHANGELOG v1.8.2；因此本条目证明的是 e6a0ae1 时点的 Unix 侧能力。v1.8.3 起浏览器判据同时覆盖 windows-latest（两条腿共用 assets/find_chrome.py 定位浏览器），但该覆盖同样待 runner 复验——改后未推送"
       }
     ],
     "local_only_native_evidence": [
@@ -51,8 +51,7 @@
       "同批收口：真实产品配置的去向决策（是否进私有仓 / 交付后 bundle 备份）仍停在「已识别·已接受·待排期」，未在开源契约里落定；在此之前这两份配置零版本兜底，换机即失。"
     ],
     "missing_native_evidence": [
-      "Windows 腿尚未经 runner 复验：2026-09-20 首跑 windows-latest 两条腿（py3.9 / py3.13）都停在第一个 Python 步骤「发布闸门」，根因是 runner 的 stdout 编码（cp1252 编不出中文，脚本第一行结论即 UnicodeEncodeError），已修并加了 RC7 守护；但改动未推送，故「Windows 上全绿」目前只有本地静态证据",
-      "本机（Windows）跑浏览器判据时 --shot 必须给绝对路径：给相对路径时 Chrome 在 Windows 上写不出截图（Chrome 报「Failed to write file …: 拒绝访问」，V7 报「截图未生成或为空」）。CI 不受影响——浏览器判据只在 Linux 腿跑；已记入 README「已知边界」",
+      "Windows 腿尚未经 runner 复验：2026-09-20 首跑 windows-latest 两条腿（py3.9 / py3.13）都停在第一个 Python 步骤「发布闸门」，根因是 runner 的 stdout 编码（cp1252 编不出中文，脚本第一行结论即 UnicodeEncodeError），已修并加了 RC7 守护；v1.8.3 又把浏览器判据纳入 windows 腿（新增 assets/find_chrome.py 定位浏览器，check_demo 内对交给 Chrome 的路径单点绝对化）。两项改动均未推送，故「Windows 上全绿」目前只有本地证据",
       "Chromium 系以外的浏览器内核未实测",
       "规格型 / 流程型两类交互件模板仍未建（本仓如实标注，不造未验证资产）"
     ]
@@ -76,7 +75,7 @@
     "license": "MIT",
     "publishing_state": "published-remote",
     "remote_repository_created": true,
-    "release_tag_recommendation": "v1.8.2",
+    "release_tag_recommendation": "v1.8.3",
     "publish_blockers": []
   }
 }

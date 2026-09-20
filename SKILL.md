@@ -1,7 +1,7 @@
 ---
 name: product-demo
 description: 给任意产品/项目生成「单文件、离线自包含、可交互」的对外演示网页——双击即开、能直接发微信、零外部依赖。用于"演示件""产品展示页""给客户看的介绍页""做个网页讲清楚 X""出个能发给客户的页面""产品官网单页"等需求。自带策划、编排、出件、核验四步；结构 / 叙事 / 交互三层机器判据，每条都配负向注入证明它会失败。
-version: 1.8.2
+version: 1.8.3
 agent_created: true
 ---
 
@@ -176,7 +176,7 @@ profiles/_示例-inline/  第三份示例（交互件嵌正文）：让 inline �
    落在系统临时目录的一次性子目录里，不在此列——这不是自相矛盾，是两类东西。）
 2. 图片先降采样再内联：base64 放大约 33%，一张 4MB 截图直接内联就爆 3MB 红线。
 3. 数值逐位来自数据源，**禁止占位值**（示例/待定/TBD/XXX），核验做逐项比对。
-4. headless 核验：`chrome --headless --dump-dom` 取 DOM、`--screenshot` 出图（Windows 上默认装在 `C:\Program Files\Google\Chrome\Application\chrome.exe`，用 `where chrome` 定位更省事）。无 tkinter，截图出文件后回读体积即可。
+4. headless 核验：`chrome --headless --dump-dom` 取 DOM、`--screenshot` 出图。无 tkinter，截图出文件后回读体积即可。**定位浏览器统一走 `python assets/find_chrome.py`**（枚举各平台标准安装位置并实测存在性，`--list` 可自查）——不要用 `where chrome`／`command -v`：依赖 PATH 里恰好有没有它，有则结果随环境变，无则静默找不到。
 5. 含中文路径在部分检索工具下返回空，列目录用 PowerShell / Python。
 6. **改判据必须同时配负向注入**——本轮靠负向测试抓到两个假绿：一是「注释掉的 `IX_init();` 仍被判为已调用」，二是「核验函数末尾的返回值没跟着改，而离线路径只走提前返回分支，所以看不出来」。判据写对了不等于写有效了。
 7. **负向测试要带 `--chrome` 跑一遍**：离线路径与浏览器路径落在核验函数不同的返回分支上，只跑离线会漏掉浏览器侧的全部改动。
@@ -214,6 +214,12 @@ profiles/_示例-inline/  第三份示例（交互件嵌正文）：让 inline �
     同步（Windows）：`robocopy "<源仓>" "%USERPROFILE%\.workbuddy\skills\<技能名>" /E /XD .git __pycache__ .workbuddy 过程文件`
     ——用 `/E` 不用 `/MIR`：`/MIR` 会删掉副本里源仓没有的文件，而产品配置不入库，
     「只存在于副本」的内容（如某份配置的品牌色值）会被静默清掉。**同步前先备份副本。**
+14. **交给外部工具的路径必须绝对化**。Chrome 不认 `--screenshot` 的相对路径——Windows 上
+    直接报 `Failed to write file …: 拒绝访问`，V7 于是判「截图未生成或为空」；`file:///`
+    同样按 URL 语义解析、不按 CWD。v1.8.3 起在 `chrome_checks` **入口单点**绝对化：
+    要加在入口，别在每个调用点补——否则下一个新加的参数会再踩一次同一个坑。
+    定位浏览器：`python assets/find_chrome.py`（跨平台枚举标准安装位置，`--list` 可自查）；
+    **找不到即 `exit 1`**——整组 SKIP 会让 `--expect` 的条数失效，那正是本仓反复标记的假绿形态。
 
 ## 依赖
 

@@ -27,12 +27,13 @@ python assets/check_demo.py <临时目录>/demo.html --profile profiles/_示例/
   --expect pass=24,fail=0,skip=3
 
 # 浏览器判据（--js-value IXRDY 是契约 C6 的取证锚点；不给它，JS 执行那条判据只会列 SKIP）
+#   --chrome 的路径用 find_chrome.py 取：跨平台枚举标准安装位置，找不到即 exit 1
 python assets/check_demo.py <临时目录>/demo.html --profile profiles/_示例/profile.json --img 0 \
-  --chrome "<chromium 可执行文件>" --js-value IXRDY --expect pass=28,fail=0,skip=3
+  --chrome "$(python assets/find_chrome.py)" --js-value IXRDY --expect pass=28,fail=0,skip=3
 
 # 负向测试（29 条用例，每条都必须被拦下；末行还判注入覆盖率）
 python assets/negative_test.py <临时目录>/demo.html --profile profiles/_示例/profile.json --img 0 \
-  --chrome "<chromium 可执行文件>" --js-value IXRDY
+  --chrome "$(python assets/find_chrome.py)" --js-value IXRDY
 
 # 单测：判据里的纯函数断言（如 V7 的像素校验）在这里被证明会失败
 python assets/check_demo.py --self-test

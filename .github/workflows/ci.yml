@@ -1,8 +1,10 @@
 name: ci
 
 # 本仓的判据只依赖 Python 标准库，所以矩阵只覆盖 Python 与操作系统。
-# 浏览器判据只在 Linux 上跑（GitHub 的 ubuntu runner 预装 google-chrome）；
-# 其余平台跳过浏览器那几条，离线判据照跑。
+# 浏览器判据在 Linux 与 **Windows** 两条腿上跑（两者的 runner 镜像都预装 google-chrome，
+# 定位交给 assets/find_chrome.py —— 枚举表可本地实测，shell 分支不能）；
+# macOS 腿跳过浏览器那几条，离线判据照跑。
+# v1.8.3 起把 Windows 纳入，见文件尾「浏览器判据」段上方的注释。
 #
 # 每一步的 `--expect` 都不是装饰：它把「文档里写的数字」变成机器断言。
 # 判据能力变了（新增一条、某条改成 SKIP）而文档没跟着改，U2 会当场 FAIL，
@@ -99,25 +101,40 @@ jobs:
       - name: 本体清洁度自检（三族判据各自被证明有效）
         run: python assets/audit_body.py --self-test
 
-      # ---- 浏览器判据 · 仅 Linux（runner 预装 google-chrome）----
-      - name: 确认浏览器可用
-        if: runner.os == 'Linux'
-        run: |
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || true)"
-          if [ -z "$CHROME" ]; then
-            echo "::error::runner 上找不到 google-chrome —— 浏览器判据无法执行，后续步骤会失败"
-            exit 1
-          fi
-          echo "CHROME=$CHROME" >> "$GITHUB_ENV"
+      # ---- 浏览器判据 · Linux + Windows ----
+      #
+      # Windows 腿自 v1.8.3 起纳入。理由是 v1.8.2 那个 V7 缺陷的**复发温床**：
+      # 缺陷本身（Chrome 不认 --screenshot 的相对路径）是一行代码的事，但它能潜伏到
+      # 有人手动在本机撞上才暴露——因为这条腿从来没跑过浏览器判据。
+      # 覆盖不到的平台，缺陷不会被发现。修一行是治标，「把覆盖补上」才是治本。
+      #
+      # 前提依据：actions/runner-images 的 Windows2025 / Ubuntu 镜像清单均列有
+      # Google Chrome（windows-latest 现为 Server 2025）。清单只给版本不给路径，
+      # 所以路径靠 assets/find_chrome.py 的枚举表——该表能用 `--list` 本地实测，
+      # 塞在 YAML 里的 shell 分支不能。
+      #
+      # macOS 腿暂不纳入：那会一次引入「新平台 + 新路径」两个未实测变量，
+      # 留待单独一轮，别把一次变更的失败原因变成两种可能。
+      #
+      # CHROME 的探测与写 $GITHUB_ENV 都在 find_chrome.py 里（不在 shell 里）：
+      # PowerShell 5.1 的 Out-File/Add-Content 默认写 BOM，GITHUB_ENV 的键名会变成
+      # "\ufeffCHROME" —— 变量静默不存在，这批判据整组 SKIP。找不到 Chrome 时该脚本
+      # 直接 exit 1：整组 SKIP 会让下边的 --expect 条数失效，宁可在这一步断掉。
+      - name: 确认浏览器可用（找不到即失败，不留整组 SKIP 的假绿）
+        if: runner.os == 'Linux' || runner.os == 'Windows'
+        run: python assets/find_chrome.py --write-env
 
+      # 三条判据的 --chrome 用 ${{ env.CHROME }} 而不是 $CHROME：
+      # 后者在 Linux（bash）成立，在 Windows（pwsh）展开成空串 —— 那会让 --chrome 变空、
+      # 整组 SKIP、退出码仍是 0，只有 --expect 能顶回来。表达式与 shell 无关，两条腿同一行。
       - name: 浏览器判据 · 示例 A（含截图，V7 一起跑）
-        if: runner.os == 'Linux'
-        run: python assets/check_demo.py demo_a.html --profile profiles/_示例/profile.json --img 0 --chrome "$CHROME" --js-value IXRDY --shot shot_a.png --expect pass=29,fail=0,skip=2
+        if: runner.os == 'Linux' || runner.os == 'Windows'
+        run: python assets/check_demo.py demo_a.html --profile profiles/_示例/profile.json --img 0 --chrome "${{ env.CHROME }}" --js-value IXRDY --shot shot_a.png --expect pass=29,fail=0,skip=2
 
       - name: 浏览器判据 · 示例 B（含截图，全绿无 SKIP）
-        if: runner.os == 'Linux'
-        run: python assets/check_demo.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 --chrome "$CHROME" --js-value IXRDY --shot shot_b.png --expect pass=30,fail=0,skip=1
+        if: runner.os == 'Linux' || runner.os == 'Windows'
+        run: python assets/check_demo.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 --chrome "${{ env.CHROME }}" --js-value IXRDY --shot shot_b.png --expect pass=30,fail=0,skip=1
 
       - name: 负向测试 · 带浏览器（B5/V5/V8 的注入在这里才真的跑）
-        if: runner.os == 'Linux'
-        run: python assets/negative_test.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 --chrome "$CHROME" --js-value IXRDY
+        if: runner.os == 'Linux' || runner.os == 'Windows'
+        run: python assets/negative_test.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 --chrome "${{ env.CHROME }}" --js-value IXRDY
