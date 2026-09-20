@@ -84,9 +84,11 @@ CI 里 `$(command -v google-chrome)` 返回空串就是这种情形——看起�
 - `assets/extract_assets.py --html <页> --out-dir <目录>`——把既有单页 HTML 里的内联图与数据抽成产品配置素材；
 - `assets/measure_density.py <html>...`——量化对照（标题层级、正文中文字数、唯一数值数）；
   它同时是**文本口径与词条匹配的单一事实来源**（`check_demo` / `audit_body` 都从它取实现）；
-- `assets/release_check.py`——发布闸门 RC1–RC6：版本三处一致、该带的件在不在、
+- `assets/release_check.py`——发布闸门 RC1–RC7：版本三处一致、该带的件在不在、
   有无运行期残留、示例内容包是否齐全、**示例会不会真的被 git 入库**、
-  **源仓与宿主实际加载的运行态副本是不是逐文件一致**（只改源仓没同步＝改动没生效）。
+  **源仓与宿主实际加载的运行态副本是不是逐文件一致**（只改源仓没同步＝改动没生效）、
+  **随库 CI 配置会不会在 Windows runner 上翻车**（顶层要声明 `PYTHONIOENCODING: utf-8`，
+  `run:` 块不许写反斜杠续行——这两条都由一次真实事故换来，见 `.github/workflows/ci.yml` 顶部注释）。
 
 `check_demo.py` 支持 `SKIP` 与 `PASS` 分列：因缺参数（未给 `--chrome` / `--js-value` / `--shot`）
 而未执行的判据单列 SKIP，并在汇总行**逐条列出**，**不计入通过**——跳过的判据不算已经查过。
@@ -213,7 +215,8 @@ python assets/build_demo.py --profile profiles/我的产品/profile.json --out m
 （`_示例/` 不配图配计算型；`_示例-带图/` 配两张图与能力型，补上 B2/V2 与 catalog 的可复现性；
 `_示例-inline/` 声明交互件嵌在正文中间，让出件器的 inline 分支也有可跑输入）。
 每份示例的 `README.md` 都写了跑通步骤与逐步预期数字。
-CI 配置见 `.github/workflows/ci.yml`——**它从未在 GitHub 上真正跑过**，见「已知边界」。
+CI 配置见 `.github/workflows/ci.yml`——**已在 GitHub 上真跑过**，首跑结论与两个
+Windows 专属坑记在该文件顶部；「已知边界」里留了摘要。
 
 运行时只需要 Python 标准库（无任何第三方依赖）。只有浏览器判据需要本机有 Chrome/Chromium，
 不给就单列 SKIP——跳过的判据不算已经查过。
@@ -230,7 +233,7 @@ SECURITY.md                     安全策略（含文件系统行为）
 manifest.json                   发布元数据（版本、兼容性证据、以及缺哪些证据）
 .gitattributes                  钉住 LF——行尾漂移会让「逐字节回读」变成假绿
 .gitignore                      默认排除 profiles/*，只放行下划线开头的基础设施目录
-.github/workflows/ci.yml        CI（未实跑过，见「已知边界」）
+.github/workflows/ci.yml        CI（首跑已回读；两个 Windows 专属坑见文件顶部）
 assets/
   template_skeleton.html        版式层骨架（品牌占位符 + 一个交互件插槽）
   interactions/
@@ -264,11 +267,21 @@ profiles/
 
 ## 已知边界
 
-- **CI 配置已写入，但从未在 GitHub 上跑过**：`.github/workflows/ci.yml` 覆盖
+- **CI 首跑已回读（2026-09-20，`e6a0ae1`）**：`.github/workflows/ci.yml` 覆盖
   Linux / Windows / macOS × Python 3.9 / 3.13，输入用三份随库示例（干净克隆可直接跑），
-  每一步都带 `--expect` 断言期望条数。**首次推送后请核对运行结果**——
-  「配置已提交」不等于「已经验证」，这条区别正是本仓的判据在别处反复强调的。
-  浏览器判据只在 Linux 上跑（runner 预装 Chrome）；其他平台那组列 SKIP，
+  每一步都带 `--expect` 断言期望条数。结果：**ubuntu / macOS 四条腿全绿**（含浏览器判据
+  与截图）；**windows 两条腿全红**，且都停在第一个 Python 步骤「发布闸门」，其后 16 步
+  skipped。根因不是判据逻辑，是两个只在 Windows 成立的环境差异：① runner 是 en-US，
+  Python 管道编码 cp1252 编不出中文，脚本第一行结论就 `UnicodeEncodeError`；
+  ② `run:` 块里的反斜杠续行在 Windows 默认 shell（pwsh）不是续行符，实测直接 `ParserError`。
+  **本机没提前拦住，是因为本机是中文 Windows、码页 cp936 能编码中文——「CI 本地等价首跑
+  全绿」是假绿**。两条都已修，并由 RC7 装了判据（CI 配置退回原状时本地就 FAIL，不必等 runner）。
+  **未闭合处：Windows 腿的修复结果尚未经 runner 复验**（改后未推送）。
+- **`--shot` 给相对路径时，Windows 上 Chrome 写不出图**：V7 会报「截图未生成或为空」。
+  实测同一命令：相对路径 → `Failed to write file …: 拒绝访问`；改绝对路径即正常落盘
+  （395 KB）。CI 不受影响——浏览器判据只在 Linux 腿跑（Chrome 按 CWD 解析相对路径，能过）。
+  但本机若想在 Windows 上跑浏览器判据，`--shot` 必须给绝对路径。
+- **浏览器判据只在 Linux 上跑**（runner 预装 Chrome）；其他平台那组列 SKIP，
   但期望条数是按平台分别断言的，所以「全列 SKIP 也算过」在那里不成立。
 - **规格型 / 流程型交互件模板未建**，需要这两类的产品走 gap 处置（见交互形态表）。
 - **浏览器判据需 Chromium 系**：其他内核的布局未实测。

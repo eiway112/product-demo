@@ -6,7 +6,8 @@
   python assets/release_check.py [--skill-dir <技能目录>]
 
 为什么单独成一个脚本而不是补进某个现成脚本：
-  发布检查的对象是「包本身」（版本落了几处、该带的件在不在、有没有残留产物），
+  发布检查的对象是「包本身」（版本落了几处、该带的件在不在、有没有残留产物、
+  随库的 CI 配置会不会在某个平台上翻车），
   与 check_demo（判成品）、audit_body（判本体文本）都不是同一层，塞进去只会让三者都变糊。
 
 这几条不为难人，只为堵住已经发生过的那一类错：版本号同时落在 SKILL.md / manifest.json /
@@ -33,6 +34,13 @@ FRONT_VERSION = re.compile(r'(?m)^version:\s*([0-9][^\s]*)\s*$')
 CHANGELOG_TOP = re.compile(r'(?m)^##\s*v?([0-9][^\s]*)\s*[—-]')
 BODY_JUNK = ('__pycache__', '_negtest', '.pytest_cache')
 BODY_JUNK_EXT = ('.pyc',)
+
+# RC7 用：CI 配置里编码口径的唯一来源。
+# 值只认 utf-8 的几种写法——只查「有没有这个键」会漏掉「写了但值写错」，
+# 而那种情形照样让 CI 红，属于本仓最反对的假绿。
+CI_FILE = ('.github', 'workflows', 'ci.yml')
+CI_UTF8_ENV = 'PYTHONIOENCODING'
+CI_UTF8_VALUES = ('utf-8', 'utf8', 'utf_8')
 
 
 def read(p):
@@ -100,6 +108,61 @@ def _git_lag(src, run):
                 '文件已逐字节一致，不影响被加载的内容）' % (b[:7], n))
     except Exception:
         return ''
+
+
+# ---- RC7 用：ci.yml 的两处静态取证 ----
+# 只能静态解析：CI 的 env 与 shell 在本地没法真跑，文件是唯一可取证的面。
+# 所以这两个函数的产物是「配置事实」，不是「运行结论」。
+
+
+def _ci_lines(text):
+    return text.replace('\r\n', '\n').split('\n')
+
+
+def _top_env(lines):
+    """顶层（零缩进）`env:` 段的 {键: 值}；值去掉引号与行尾注释。读不到就是空字典。"""
+    out, i = {}, 0
+    while i < len(lines):
+        if lines[i].rstrip() != 'env:':
+            i += 1
+            continue
+        j = i + 1
+        while j < len(lines):
+            s = lines[j]
+            if not s.strip():
+                j += 1
+                continue
+            if not s.startswith((' ', '\t')):
+                break
+            m = re.match(r'^\s+([A-Za-z_][\w-]*)\s*:\s*(.*)$', s)
+            if m:
+                out[m.group(1)] = m.group(2).split('#')[0].strip().strip('"\'')
+            j += 1
+        i = j
+    return out
+
+
+def _run_blocks(lines):
+    """`run: |` / `run: >` 形式的块 → [(run 所在行号, [块内行])]。
+
+    只认块形式：单行 `run: cmd` 天生没有续行可言。返回行号是为了 FAIL 文案能指到行。
+    """
+    out, i = [], 0
+    while i < len(lines):
+        m = re.match(r'^( *)run: *[|>][-+]? *$', lines[i])
+        if not m:
+            i += 1
+            continue
+        indent, body, j = len(m.group(1)), [], i + 1
+        while j < len(lines):
+            t = lines[j]
+            if t.strip() and (len(t) - len(t.lstrip(' '))) <= indent:
+                break
+            body.append(t)
+            j += 1
+        out.append((i + 1, body))
+        i = j
+    return out
 
 
 def main():
@@ -175,7 +238,7 @@ def main():
         if os.path.exists(path(name)):
             junk.append(path(name))
     if junk:
-        fail.append('RC3 仓内残留运行期产物：%s' % '、'.join(sorted(junk)[:6]))
+        fail.append('RC3 仓内残留运行期产物：%s' % '、'.join(sorted(set(junk))[:6]))
     else:
         ok.append('RC3 无运行期残留（__pycache__ / _negtest / 临时成品）')
 
@@ -268,6 +331,51 @@ def main():
         else:
             ok.append('RC6 运行态副本与源仓逐文件一致（%d 份）%s'
                       % (len(A), _git_lag(skill, runtime)))
+
+    # ---- RC7 CI 配置自洽 ----
+    # 这一条不是"顺手加的"，它由一次真实事故换来：2026-09-20 本仓 CI 在 GitHub 上
+    # 首跑，6 条腿里 ubuntu / macOS 四条全绿，**windows 两条全红**，且都停在
+    # 第一个 Python 步骤（其后 16 步 skipped）。根因不是判据逻辑，是两处只在
+    # Windows 成立的环境差异：
+    #   ① 输出通道：runner 是 en-US，Python 的管道编码 cp1252 编不出中文，
+    #      脚本第一行结论就 UnicodeEncodeError。本地以 PYTHONIOENCODING=cp1252
+    #      逐脚本复现过：release_check / audit_body / check_demo --self-test 均退出码 1。
+    #   ② shell 方言：`run:` 块里的反斜杠续行在 bash 成立，Windows 的默认 shell 是
+    #      pwsh，反斜杠不是续行符——实测 powershell -File 直接 ParserError。
+    # 比事故本身更该记的是**为什么本地没拦住**：本机是中文 Windows，控制台码页
+    # cp936 能编码中文，于是"CI 本地等价首跑 14 步全绿"是假绿——被检验的性质
+    # （runner 的执行环境）与本地能观测到的性质（本机码页）根本不是同一个。
+    # 这与本仓在 V7（截图只验文件存在、不验像素）上栽的是同一形态，所以这次不靠
+    # "下次注意"，直接装一条会 FAIL 的判据。
+    #
+    # 极限写在明处：CI 的 env 与 shell 在本地没法真跑，只能静态解析文件。本判据
+    # 证明的是「编码口径与 shell 兼容性没有从配置层退回」，**不是「CI 真的绿了」**；
+    # 后者只有真跑才算数（首跑结论写在 ci.yml 顶部注释里）。
+    ci = path(*CI_FILE)
+    if not os.path.isfile(ci):
+        skip.append('RC7 仓内没有 .github/workflows/ci.yml，CI 配置自洽本次未核')
+    else:
+        ct = _ci_lines(read(ci))
+        blocks = _run_blocks(ct)
+        env = _top_env(ct)
+        bad = []
+        if not env.get(CI_UTF8_ENV):
+            bad.append('顶层 env 未声明 %s：Windows runner 的 Python 管道编码是 cp1252，'
+                       '中文结论行会在第一行就 UnicodeEncodeError（本仓实测过）'
+                       % CI_UTF8_ENV)
+        elif env[CI_UTF8_ENV].lower() not in CI_UTF8_VALUES:
+            bad.append('顶层 env 的 %s=%s，不是 utf-8：写成别的值等于没写，CI 照样在 Windows 红'
+                       % (CI_UTF8_ENV, env[CI_UTF8_ENV]))
+        slurp = [n for n, body in blocks if any(t.rstrip().endswith('\\') for t in body)]
+        if slurp:
+            bad.append('run: 块（第 %s 行起）用了反斜杠续行：bash 认，Windows 的默认 shell '
+                       'pwsh 不认（ParserError）——本仓约定长命令一律写单行'
+                       % '、'.join(str(n) for n in slurp))
+        if bad:
+            fail.append('RC7 CI 配置会在 Windows 腿上翻车：%s' % '；'.join(bad))
+        else:
+            ok.append('RC7 CI 配置自洽（顶层 %s=%s；%d 个 run: 块无反斜杠续行）'
+                      % (CI_UTF8_ENV, env[CI_UTF8_ENV], len(blocks)))
 
     for line in ok:
         print('PASS  ' + line)

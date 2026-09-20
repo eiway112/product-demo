@@ -8,15 +8,33 @@ name: ci
 # 判据能力变了（新增一条、某条改成 SKIP）而文档没跟着改，U2 会当场 FAIL，
 # 而不是让一串看起来很绿的 PASS 继续骗人。
 #
-# 注意：本文件**从未在 GitHub 上真正执行过**。首次推送后请核对运行结果；
-# 若有失败，按报错修正本文件——不要把「配置已提交」当成「已经验证」。
-# 这一点同样写在 README.md 的「已知边界」里。
+# ---- 首次真跑（2026-09-20，e6a0ae1）暴露的两个坑，都只在 Windows 上炸 ----
+# ① 输出编码。6 条腿里 ubuntu / macOS 四条全绿，windows 两条全红，且都停在
+#    「发布闸门」这一步（其后 16 步 skipped）。根因不是逻辑，是输出通道：
+#    runner 是 en-US，Python 的管道编码 cp1252 编不出中文，脚本第一行结论就
+#    UnicodeEncodeError（本地以 PYTHONIOENCODING=cp1252 逐脚本复现，退出码 1）。
+#    顶层 env 是本仓这一口径的**唯一来源**，不要挪进单个步骤：
+#    assets/release_check.py 的 RC7 会查这一行，删掉它本地就红。
+#    为什么此前没发现：本机是中文 Windows，控制台码页 cp936 能编码中文，
+#    「CI 本地等价首跑全绿」是假绿——被检验的性质（runner 的执行环境）与
+#    本地能观测到的性质（本机码页）根本不是同一个。
+# ② shell 方言。`run:` 块里的反斜杠续行在 Linux / macOS（bash）成立，Windows 上
+#    默认 shell 是 pwsh，反斜杠不是续行符——实测 powershell -File 直接 ParserError
+#    （一元运算符"--"后面缺少表达式）。所以本文件长命令一律写单行；
+#    RC7 同样会查（规则零例外，就不必再养一份「哪一步允许续行」的名单）。
+#
+# 本文件的首跑结果已回读并记在上面；改动任何一条后都要重新核对运行结果，
+# 不要把「配置已提交」当成「已经验证」。
 
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+
+# 编码口径的唯一来源，见上方 ①。RC7 守护这一行。
+env:
+  PYTHONIOENCODING: utf-8
 
 jobs:
   pipeline:
@@ -35,7 +53,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      # ---- 发布闸门：版本号三处一致 / 出厂件齐备 / 无运行残留 / 示例内容包完整 ----
+      # ---- 发布闸门：版本号三处一致 / 出厂件齐备 / 无运行残留 / 示例内容包完整 / CI 配置自洽 ----
       - name: 发布闸门
         run: python assets/release_check.py
 
@@ -44,9 +62,7 @@ jobs:
         run: python assets/build_demo.py --profile profiles/_示例/profile.json --out demo_a.html
 
       - name: 核验 · 示例 A 离线判据
-        run: |
-          python assets/check_demo.py demo_a.html --profile profiles/_示例/profile.json --img 0 \
-            --expect pass=24,fail=0,skip=3
+        run: python assets/check_demo.py demo_a.html --profile profiles/_示例/profile.json --img 0 --expect pass=24,fail=0,skip=3
 
       - name: 负向测试 · 示例 A 离线
         run: python assets/negative_test.py demo_a.html --profile profiles/_示例/profile.json --img 0
@@ -56,9 +72,7 @@ jobs:
         run: python assets/build_demo.py --profile profiles/_示例-带图/profile.json --out demo_b.html
 
       - name: 核验 · 示例 B 离线判据
-        run: |
-          python assets/check_demo.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 \
-            --expect pass=25,fail=0,skip=2
+        run: python assets/check_demo.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 --expect pass=25,fail=0,skip=2
 
       - name: 负向测试 · 示例 B 离线（B2/V2 在有图的成品上真的执行）
         run: python assets/negative_test.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2
@@ -70,9 +84,7 @@ jobs:
         run: python assets/build_demo.py --profile profiles/_示例-inline/profile.json --out demo_c.html
 
       - name: 核验 · 示例 C 离线判据
-        run: |
-          python assets/check_demo.py demo_c.html --profile profiles/_示例-inline/profile.json --img 0 \
-            --expect pass=24,fail=0,skip=3
+        run: python assets/check_demo.py demo_c.html --profile profiles/_示例-inline/profile.json --img 0 --expect pass=24,fail=0,skip=3
 
       - name: 负向测试 · 示例 C 离线
         run: python assets/negative_test.py demo_c.html --profile profiles/_示例-inline/profile.json --img 0
@@ -100,18 +112,12 @@ jobs:
 
       - name: 浏览器判据 · 示例 A（含截图，V7 一起跑）
         if: runner.os == 'Linux'
-        run: |
-          python assets/check_demo.py demo_a.html --profile profiles/_示例/profile.json --img 0 \
-            --chrome "$CHROME" --js-value IXRDY --shot shot_a.png --expect pass=29,fail=0,skip=2
+        run: python assets/check_demo.py demo_a.html --profile profiles/_示例/profile.json --img 0 --chrome "$CHROME" --js-value IXRDY --shot shot_a.png --expect pass=29,fail=0,skip=2
 
       - name: 浏览器判据 · 示例 B（含截图，全绿无 SKIP）
         if: runner.os == 'Linux'
-        run: |
-          python assets/check_demo.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 \
-            --chrome "$CHROME" --js-value IXRDY --shot shot_b.png --expect pass=30,fail=0,skip=1
+        run: python assets/check_demo.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 --chrome "$CHROME" --js-value IXRDY --shot shot_b.png --expect pass=30,fail=0,skip=1
 
       - name: 负向测试 · 带浏览器（B5/V5/V8 的注入在这里才真的跑）
         if: runner.os == 'Linux'
-        run: |
-          python assets/negative_test.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 \
-            --chrome "$CHROME" --js-value IXRDY
+        run: python assets/negative_test.py demo_b.html --profile profiles/_示例-带图/profile.json --img 2 --chrome "$CHROME" --js-value IXRDY

@@ -1,7 +1,7 @@
 ---
 name: product-demo
 description: 给任意产品/项目生成「单文件、离线自包含、可交互」的对外演示网页——双击即开、能直接发微信、零外部依赖。用于"演示件""产品展示页""给客户看的介绍页""做个网页讲清楚 X""出个能发给客户的页面""产品官网单页"等需求。自带策划、编排、出件、核验四步；结构 / 叙事 / 交互三层机器判据，每条都配负向注入证明它会失败。
-version: 1.8.1
+version: 1.8.2
 agent_created: true
 ---
 
@@ -199,6 +199,8 @@ profiles/_示例-inline/  第三份示例（交互件嵌正文）：让 inline �
 11. **发布前跑 `python assets/release_check.py`**：版本号同时落在 `SKILL.md` frontmatter /
     `manifest.json` / `CHANGELOG` 三处，靠人记一定会对不上——而技能平台读的恰恰是
     `SKILL.md` 的 frontmatter。这条闸门就是为这次「1.2.0 的包装着 1.3.0 的内容」装的。
+    RC7 另守随库 CI 配置的两条 Windows 专属坑（顶层 `PYTHONIOENCODING: utf-8`、
+    `run:` 块不写反斜杠续行）——它们只在 runner 上炸，本机是中文 Windows 时看不出来。
 12. **新增下划线开头的示例目录时，`.gitignore` 的放行规则必须按模式写
     （`!profiles/_*/`），不要去枚举目录名**。枚举过一次就漏了：`profiles/_示例-带图/`
      被 `profiles/*` 悄悄排除，本机一切正常、干净克隆却少一整个示例，而发布闸门当时

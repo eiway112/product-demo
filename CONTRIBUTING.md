@@ -76,7 +76,7 @@ python assets/audit_body.py --self-test
 
 ## 发布前检查
 
-RC1–RC6 全部由 `python assets/release_check.py` 机器判（它会 FAIL，不靠勾选）：
+RC1–RC7 全部由 `python assets/release_check.py` 机器判（它会 FAIL，不靠勾选）：
 
 - [ ] **RC1** `SKILL.md` frontmatter 的 `version` == `manifest.json` 的 `version` == `CHANGELOG` 顶部
       ——技能平台读的是 `SKILL.md` 的 frontmatter。v1.4.0 之前 SKILL.md 写着 1.2.0 而 manifest
@@ -87,6 +87,11 @@ RC1–RC6 全部由 `python assets/release_check.py` 机器判（它会 FAIL，�
       ——RC4 只查「文件在不在磁盘上」，RC5 查「`.gitignore` 会不会把它排除」。
       两者缺一就会出现「本地有、干净克隆没有」：`_示例-带图/` 就是这样被漏掉的。
       **新增下划线开头的示例目录时，放行规则必须是模式化的（`!profiles/_*/`），不要去枚举名字**
+- [ ] **RC6 / RC7** 源仓与运行态副本逐文件一致 **且 CI 配置不会在 Windows 腿翻车**
+      ——RC6 管「改完有没有搬到宿主真正加载的那一处」（同步命令见 SKILL.md 第 13 条）；
+      RC7 管顶层 `PYTHONIOENCODING: utf-8` 与 `run:` 块不写反斜杠续行。
+      两条都由真实事故换来：前者是副本落后 5 个 commit 而无人察觉，
+      后者是 CI 首跑 windows 两条腿全红、四条 Unix 腿全绿。
 - [ ] `manifest.json` 的 `version` / `updated_at` / `repository_url` 已更新
 - [ ] `CHANGELOG.md` 记了本次变更（只记已发生的）
 - [ ] 上面每条命令全绿，且三份示例 README 里的预期数字与实测一致
