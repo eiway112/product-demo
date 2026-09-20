@@ -206,12 +206,13 @@ profiles/_示例-inline/  第三份示例（交互件嵌正文）：让 inline �
      被 `profiles/*` 悄悄排除，本机一切正常、干净克隆却少一整个示例，而发布闸门当时
      只查「文件在不在」照样报 PASS。现在 RC5 用 `git check-ignore` 守这一条。
 13. **源仓改完 ≠ 用户用上了**：宿主加载的是运行态副本（`~/.workbuddy/skills/<技能名>/`），
-    不是本仓工作树。改完必须同步过去，再跑 `python assets/release_check.py`——
+    不是本仓工作树——它是**纯文件副本，不是第二个仓**（不含 `.git`；同步命令因此要显式
+    `/XD .git` 排开源仓那一份）。改完必须同步过去，再跑 `python assets/release_check.py`——
     RC6 会逐文件比对两处，不一致即 FAIL 并点名差异文件（找不到副本时 SKIP 并说明，
     看不见不等于一致，不放绿）。
-    代价实测过一次：副本落后 5 个 commit、48 份里 22 份内容不同，`release_check.py`
-    在副本里整份不存在（不是版本旧，是根本没有）。
-    同步（Windows）：`robocopy "<源仓>" "%USERPROFILE%\.workbuddy\skills\<技能名>" /E /XD .git __pycache__ .workbuddy 过程文件`
+    代价实测过一次（当时副本里还留着 `.git`）：副本落后 5 个 commit、48 份里 22 份内容不同，
+    `release_check.py` 在副本里整份不存在（不是版本旧，是根本没有）。
+    同步（Windows）：`robocopy "<源仓>" "%USERPROFILE%\.workbuddy\skills\<技能名>" /E /XD .git __pycache__ .workbuddy 过程文件 临时文件`
     ——用 `/E` 不用 `/MIR`：`/MIR` 会删掉副本里源仓没有的文件，而产品配置不入库，
     「只存在于副本」的内容（如某份配置的品牌色值）会被静默清掉。**同步前先备份副本。**
 14. **交给外部工具的路径必须绝对化**。Chrome 不认 `--screenshot` 的相对路径——Windows 上
