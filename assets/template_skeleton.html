@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__DOC_TITLE__</title>
+<script>/*首屏显形门控标记：只有脚本真的跑起来，才允许 CSS 把 .fx 藏起来*/document.documentElement.className+=' js';</script>
+<style>
+  /* 配色一律来自项目配置，禁止现场臆造 */
+  :root{
+    --brand:__BRAND_PRIMARY__; --brand-dark:__BRAND_DARK__; --brand-light:__BRAND_LIGHT__;
+    --accent:__BRAND_ACCENT__; --ink:__INK__; --ink-2:__INK_2__; --line:__LINE__; --bg:#FFFFFF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:var(--ink);background:var(--bg);line-height:1.65}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  section{padding:44px 0;border-bottom:1px solid var(--line)}
+  section p{margin:10px 0;font-size:15px}
+  section p:last-child{margin-bottom:0}
+
+  /* 三级标题视觉：h2 左粗条 / h3 下细线 / h4 前置方点。
+     三层缺一层，叙事在视觉上就立不起来（扁平的第一物理原因）。 */
+  h2{font-size:24px;color:var(--brand-dark);margin-bottom:6px;padding-left:14px;border-left:5px solid var(--brand)}
+  h3{font-size:18px;color:var(--brand-dark);margin:24px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  h4{font-size:15px;color:var(--brand);margin:16px 0 6px;padding-left:15px;position:relative}
+  h4::before{content:"";position:absolute;left:0;top:.5em;width:6px;height:6px;background:var(--accent);border-radius:1px}
+  .sub{color:var(--ink-2);font-size:14px;margin-bottom:22px;padding-left:19px}
+
+  header{border-bottom:1px solid var(--line)}
+  .hd{display:flex;align-items:center;gap:16px;padding:18px 24px}
+  .hd img{height:44px;width:auto}
+  .hd .nm{font-size:18px;font-weight:700;color:var(--brand-dark)}
+  .hd .tg{font-size:13px;color:var(--ink-2)}
+
+  /* ---- 首屏 hero：品牌色渐变底 + 光晕 + 大标题 + 滚动引导 ----
+     底色只取 brand-dark → brand 两级：两级都是中深色，白字在任何品牌配色下都读得清。
+     不用 brand-light（浅色端）铺底——浅底配白字等于把首屏做成不可读。 */
+  .hero{position:relative;overflow:hidden;text-align:center;color:#fff;padding:64px 0 120px;
+    background:linear-gradient(150deg,var(--brand-dark) 0%,var(--brand) 100%)}
+  .hero::before{content:"";position:absolute;left:50%;top:-280px;width:1100px;height:560px;
+    margin-left:-550px;pointer-events:none;
+    background:radial-gradient(closest-side,rgba(255,255,255,.26),rgba(255,255,255,0))}
+  .hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:96px;pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,0),var(--bg))}
+  .hero>.wrap{position:relative;z-index:1}
+  .hero h1{font-size:42px;line-height:1.3;color:#fff;margin-bottom:16px;letter-spacing:-.5px}
+  /* 强调词用「荧光笔下划」而不是换色：换色在深底上要碰运气，下划线在哪套配色下都成立 */
+  .hero h1 b{background:linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(255,255,255,.34) 0)}
+  .hero p{font-size:17px;color:rgba(255,255,255,.92);max-width:820px;margin:0 auto}
+  .hero-cta{margin-top:26px}
+  .hero-cta a{display:inline-block;background:#fff;color:var(--brand-dark);font-size:15px;font-weight:700;
+    padding:12px 28px;border-radius:999px;text-decoration:none;box-shadow:0 10px 24px rgba(0,0,0,.22)}
+  .hero-img{margin:34px auto 0;max-width:880px}
+  .hero-img img{width:100%;height:auto;display:block;border-radius:12px;background:#fff;
+    box-shadow:0 18px 40px rgba(0,0,0,.28)}
+  .cue{position:absolute;left:50%;bottom:34px;width:22px;height:22px;margin-left:-11px;z-index:2;
+    border-right:3px solid var(--brand);border-bottom:3px solid var(--brand);
+    transform:rotate(45deg);animation:cue 1.9s ease-in-out infinite}
+  @keyframes cue{0%,100%{opacity:.3;transform:rotate(45deg) translate(0,0)}
+                 50%{opacity:1;transform:rotate(45deg) translate(5px,5px)}}
+
+  /* ---- 关键数字区：数字滚动到终值 + 条形按最大值归一后生长 ----
+     终值写在标签文本里、终宽写在行内 style 里：脚本不跑时数字与条都已经是终态。 */
+  .stats{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin:34px auto 0;max-width:880px}
+  .stat{flex:1 1 190px;padding:14px 16px;border-radius:12px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26)}
+  .stat b{display:block;font-size:34px;line-height:1.15;color:#fff}
+  .stat .lb{display:block;font-size:13px;color:rgba(255,255,255,.88);margin-top:2px}
+  .stat .bar{display:block;height:6px;border-radius:3px;margin-top:10px;
+    background:rgba(255,255,255,.85);transition:width .8s cubic-bezier(.2,.7,.3,1)}
+
+  .tag{display:inline-block;background:var(--brand-light);color:var(--brand-dark);font-size:12px;
+    padding:2px 10px;border-radius:10px;margin-left:8px;vertical-align:middle}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+  th{background:var(--brand-light);color:var(--brand-dark)}
+
+  ul{margin-left:20px} li{margin-bottom:6px;font-size:15px}
+  figure{margin:18px 0} figure img{width:100%;height:auto;border-radius:8px}
+  figcaption{font-size:12px;color:var(--ink-2);text-align:center;margin-top:6px}
+
+  footer{padding:28px 0;color:var(--ink-2);font-size:13px}
+
+  /* 动效仅 fade / 位移两类，时长 ≤800ms（分节渐入的错峰延迟另算）。
+     隐藏必须由 .js 门控：脚本一旦没跑起来（WebView 拦截 / 脚本报错 / IO 缺失），
+     .fx 就是普通内容，本来就在——宁可没有动画，不能没有首屏。 */
+  .js .fx{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease}
+  .js .fx.in{opacity:1;transform:none}
+
+  @media (max-width:820px){
+    section{padding:32px 0}
+    h2{font-size:20px}
+    h3{font-size:16px}
+    .hero{padding:44px 0 96px}
+    .hero h1{font-size:27px}
+    .stat b{font-size:28px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .js .fx{transition:none}
+    .cue{animation:none}
+  }
+
+  /* 交互件专属样式由该项目声明的那一份模板注入，选择器一律 .ix- 前缀 */
+__INTERACTION_CSS__
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+<!--ASSET:logo-->  <!-- 可选：profile.assets.logo 留空则整块移除 -->
+    <img src="data:image/png;base64,__LOGO_B64__" alt="logo">
+<!--/ASSET:logo-->
+    <div>
+      <div class="nm">__PRODUCT_NAME__</div>
+      <div class="tg">__HEADER_TAGLINE__</div>
+    </div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <h1 class="fx">__HERO_TITLE__</h1>
+    <p class="fx">__HERO_LEAD__</p>
+<!--PLAY-->  <!-- 只在声明了交互件时出现：先玩后读，第一屏就给出可点的入口 -->
+    <div class="hero-cta fx"><a href="#start">先玩一下</a></div>
+<!--/PLAY-->
+<!--ASSET:hero-->  <!-- 可选：profile.assets.hero 留空则整块移除 -->
+    <div class="hero-img fx"><img src="data:image/png;base64,__HERO_B64__" alt="hero"></div>
+<!--/ASSET:hero-->
+<!--STATS-->
+  </div>
+  <a class="cue" href="#start" aria-label="向下滚动"></a>
+</div>
+
+<div class="wrap" id="start">
+__SECTIONS_HTML__
+</div>
+
+<footer>
+  <div class="wrap">__FOOTER_NOTE__</div>
+</footer>
+
+<script>
+  // 交互件逻辑由该项目声明的那一份模板注入；本段只保留与产品无关的版式行为。
+  // try/finally 是刻意的：交互件脚本一旦抛错，进场那一段仍要跑完——
+  // 否则「脚本报错」会连带把整页内容留在隐藏态，这是首屏门控最怕的形态。
+  try{
+__INTERACTION_JS__
+  }finally{
+    // 进场动效：.fx / [data-grow] / [data-count] 全由脚本挂上。
+    // 脚本没跑起来时：分节本来就在、条本来就是终宽、数字本来就是终值。
+    var anim=[].slice.call(document.querySelectorAll(".fx"));
+    [].slice.call(document.querySelectorAll(".wrap > section, .stat")).forEach(function(el){
+      el.classList.add("fx");anim.push(el);
+    });
+    var bars=[].slice.call(document.querySelectorAll("[data-grow]"));
+    var nums=[].slice.call(document.querySelectorAll("[data-count]"));
+    bars.forEach(function(el){el.style.width="0"});
+    nums.forEach(function(el){el.textContent="0"});
+
+    function countUp(el){
+      var to=parseFloat(el.getAttribute("data-count"));
+      if(!isFinite(to)){el.textContent=to;return}
+      var done=false;
+      function finish(){if(!done){done=true;el.textContent=to}}
+      if(window.requestAnimationFrame){
+        var t0=0,dur=900;
+        (function step(ts){
+          if(!t0){t0=ts}
+          var p=Math.min(1,(ts-t0)/dur);
+          el.textContent=Math.round(to*(1-Math.pow(1-p,3)));
+          if(p<1){window.requestAnimationFrame(step)}else{finish()}
+        })(0);
+      }
+      // rAF 不跑的环境（后台标签页 / 截图与部分 WebView）也必须落到终值：
+      // 数字停在 0 = 动画把内容吃掉了，这正是首屏门控最反对的形态
+      window.setTimeout(finish,1200);
+    }
+    function settle(el){
+      if(el.__pd){return}
+      el.__pd=1;
+      if(el.hasAttribute("data-grow")){el.style.width=el.getAttribute("data-grow")}
+      else if(el.hasAttribute("data-count")){countUp(el)}
+      else{el.classList.add("in")}
+    }
+    function inView(el){
+      var r=el.getBoundingClientRect();
+      return r.top<window.innerHeight&&r.bottom>0;
+    }
+    // 视口矩形扫描：加载时先扫一遍，滚动/缩放时再扫。IO 只是加速项，
+    // 不是唯一通道——IO 存在却永不回调的环境，内容靠这条路照样显形。
+    function sweep(){
+      var n=0;
+      anim.concat(bars,nums).forEach(function(el){
+        if(el.__pd||!inView(el)){return}
+        if(!el.hasAttribute("data-grow")&&!el.hasAttribute("data-count")){
+          el.style.transitionDelay=(Math.min(n,5)*80)+"ms";n++;
+        }
+        settle(el);
+      });
+    }
+    // 兜底扫描挂 load + 定时器：实测（2026-09-20，headless 截图/虚拟时间环境）——
+    // 脚本求值期注册的定时器不触发，load 之后注册的才触发；IO 回调与 rAF 同样不可靠。
+    // 所以进场显形的兜底全部从 load 事件起挂，不用求值期的一次扫描。
+    // 定时扫描只在前 2 秒内跑：之后交给 scroll/IO，不抢滚动渐入的活。
+    window.addEventListener("load",function(){
+      [150,500,1000,2000].forEach(function(t){window.setTimeout(sweep,t)});
+    });
+    if(window.IntersectionObserver){
+      var io=new IntersectionObserver(function(es){
+        var n=0;
+        es.forEach(function(e){
+          if(!e.isIntersecting){return}
+          var el=e.target;
+          if(!el.__pd&&!el.hasAttribute("data-grow")&&!el.hasAttribute("data-count")){
+            el.style.transitionDelay=(Math.min(n,5)*80)+"ms";n++;
+          }
+          settle(el);io.unobserve(el);
+        });
+      },{threshold:.12});
+      anim.concat(bars,nums).forEach(function(el){io.observe(el)});
+    }
+    window.addEventListener("scroll",sweep,{passive:true});
+    window.addEventListener("resize",sweep);
+  }
+</script>
+</body>
+</html>

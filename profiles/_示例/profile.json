@@ -1,0 +1,22 @@
+{
+  "_说明": "本目录是仓内自带的最小可跑示例：clone 下来不改任何东西就能出件，用来演示「一份完整配置长什么样」，也供「本体零改动」复检跑通全链路。它不是新建产品的模板（模板见 ../_模板/）。product 字段填的是明显的占位名，避免任何真实产品名进入本仓。",
+  "product": "示例估算器",
+  "vendor": "",
+  "audience_default": "客户",
+  "form_default": "单页滚动",
+  "content": "content.json",
+  "sections": "sections.html",
+  "interaction": {
+    "pattern": "calculator",
+    "data": "items.json",
+    "role": "evidence",
+    "_why": "本示例演示计算型：档位 → 数值，按交互形态分类表配档位对照器（calculator）。同时它是仓内第一个把 calculator 模板跑通的配置——此前该模板从未被真实配置跑过。"
+  },
+  "assets_dir": "",
+  "assets": {
+    "logo": "",
+    "hero": ""
+  },
+  "delivery_dir": "",
+  "footer_note": "本页为 product-demo 技能自带的示例件；数值均为演示用虚拟值，不构成任何承诺"
+}

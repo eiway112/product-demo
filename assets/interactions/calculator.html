@@ -1,0 +1,130 @@
+<!--css-->
+<style>
+  /* 档位对照器（计算型：档位 → 数值）。点选预设档位，面板展示该档位的指标集；
+     数值全部来自配置里的已实测数据集，页面内不做计算——「推演」是另一种形态，当前无模板。
+     样式只作用于 .ix- 前缀，不污染版式层 */
+  .ix-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px}
+  /* hover 要给得起「可点」的暗示：只换边框色太弱，加上抬升与投影。
+     .on 写在 :hover 之后——选中态的配色不该被悬停态盖掉。 */
+  .ix-card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;cursor:pointer;
+    transition:transform .25s ease,box-shadow .25s ease,background .3s ease,border-color .3s ease}
+  .ix-card:hover{border-color:var(--brand);transform:translateY(-3px);
+    box-shadow:0 10px 20px rgba(0,0,0,.13)}
+  .ix-card.on{background:var(--brand-light);border-color:var(--brand)}
+  .ix-card .t{font-weight:700;color:var(--brand-dark);font-size:15px;margin-bottom:4px}
+  .ix-card .d{font-size:12px;color:var(--ink-2)}
+  .ix-panel{border:1px solid var(--line);border-radius:10px;padding:20px 22px}
+  .ix-pt{font-size:18px;font-weight:700;color:var(--brand-dark);margin-bottom:8px}
+  .ix-body{font-size:14px;color:var(--ink-2)}
+  .ix-bar{position:relative;height:26px;background:var(--brand-light);border-radius:13px;margin:14px 0 8px}
+  .ix-bar .fill{position:absolute;left:0;top:0;height:100%;background:var(--brand);border-radius:13px;
+    transition:width .7s cubic-bezier(.2,.7,.3,1)}
+  .ix-bar .whisk{position:absolute;top:0;height:100%;background:var(--accent);opacity:.28;border-radius:13px}
+  .ix-range{font-size:14px}
+  .ix-kv{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 24px;font-size:14px;margin-top:12px}
+  .ix-kv .k{color:var(--ink-2)}
+  .ix-kv .good{color:#2E8B57;font-weight:700}
+  .ix-kv .watch{color:#B8860B;font-weight:700}
+  .ix-note{margin-top:14px;font-size:14px;background:#FAFBFE;border-left:4px solid var(--brand);padding:10px 14px}
+</style>
+<!--html-->
+<div class="ix-cards" id="ix-cards"></div>
+<div class="ix-panel">
+  <div class="ix-pt" id="ix-title">—</div>
+  <div class="ix-body" id="ix-body">—</div>
+  <div class="ix-bar" id="ix-barwrap">
+    <div class="whisk" id="ix-whisk"></div>
+    <div class="fill" id="ix-barfill"></div>
+  </div>
+  <div class="ix-range"><b id="ix-range">—</b> <span class="tag" id="ix-unit"></span></div>
+  <div class="ix-kv" id="ix-kv"></div>
+  <div class="ix-note" id="ix-note">—</div>
+</div>
+<!--js-->
+<script>
+  // 数据一律来自项目配置中的已实测数据集，禁止占位值
+  var IX_ITEMS = __IX_ITEMS__;
+  var IX_AXIS  = __IX_AXIS__;
+  var IX_UNIT  = __IX_UNIT__;
+
+  function IX_range(){
+    if(IX_AXIS && IX_AXIS.length === 2 && IX_AXIS[0] !== null){return IX_AXIS}
+    var lo=null, hi=null;
+    for(var i=0;i<IX_ITEMS.length;i++){
+      var ms=IX_ITEMS[i].metrics||[];
+      for(var j=0;j<ms.length;j++){
+        if(typeof ms[j].lo==="number" && typeof ms[j].hi==="number"){
+          lo=(lo===null)?ms[j].lo:Math.min(lo,ms[j].lo);
+          hi=(hi===null)?ms[j].hi:Math.max(hi,ms[j].hi);
+        }
+      }
+    }
+    return [lo,hi];
+  }
+  function IX_pct(a,x){
+    if(a[0]===null || a[1]===a[0]){return "0%"}
+    var p=(x-a[0])/(a[1]-a[0])*100;
+    return Math.max(0,Math.min(100,p)).toFixed(1)+"%";
+  }
+  function IX_render(i){
+    var it=IX_ITEMS[i], a=IX_range(), band=null;
+    document.getElementById("ix-title").textContent = it.title;
+    document.getElementById("ix-body").textContent  = it.body || "";
+    document.getElementById("ix-unit").textContent  = IX_UNIT || "";
+    var kv=document.getElementById("ix-kv");
+    while(kv.firstChild){kv.removeChild(kv.firstChild)}
+    var ms=it.metrics||[];
+    for(var k=0;k<ms.length;k++){
+      var m=ms[k];
+      if(!band && typeof m.lo==="number" && typeof m.hi==="number"){band=m;continue}
+      var row=document.createElement("div");
+      var key=document.createElement("span");
+      key.className="k"; key.textContent=m.label+"：";
+      row.appendChild(key);
+      row.appendChild(document.createTextNode(m.value));
+      if(m.tone){row.className=m.tone}
+      kv.appendChild(row);
+    }
+    var wrap=document.getElementById("ix-barwrap");
+    if(band){
+      wrap.style.display="";
+      document.getElementById("ix-whisk").style.left  = IX_pct(a,band.lo);
+      document.getElementById("ix-whisk").style.width = IX_pct(a,band.hi-band.lo);
+      var fill=document.getElementById("ix-barfill");
+      var w=IX_pct(a, typeof band.point==="number" ? band.point : band.hi);
+      // 首次渲染从 0 长起来（后续切换仍是原地的宽度过渡）——条是这页唯一会动的量
+      if(fill.getAttribute("data-grown")!=="1"){
+        fill.setAttribute("data-grown","1");
+        fill.style.width="0";
+        window.setTimeout(function(){fill.style.width=w},50);
+      }else{
+        fill.style.width=w;
+      }
+      document.getElementById("ix-range").textContent = band.value;
+    }else{
+      wrap.style.display="none";
+      document.getElementById("ix-range").textContent = "";
+    }
+    document.getElementById("ix-note").innerHTML = it.note || "";
+    var cards=document.querySelectorAll(".ix-card");
+    for(var c=0;c<cards.length;c++){cards[c].classList.toggle("on", c===i)}
+  }
+  function IX_init(){
+    var host=document.getElementById("ix-cards");
+    for(var i=0;i<IX_ITEMS.length;i++){
+      var d=document.createElement("div");
+      d.className="ix-card"+(i===0?" on":"");
+      d.setAttribute("data-ix", i);
+      var t=document.createElement("div"); t.className="t"; t.textContent=IX_ITEMS[i].title;
+      var s=document.createElement("div"); s.className="d"; s.textContent=IX_ITEMS[i].short||"";
+      d.appendChild(t); d.appendChild(s);
+      d.addEventListener("click", function(){IX_render(+this.getAttribute("data-ix"))});
+      host.appendChild(d);
+    }
+    IX_render(0);
+  }
+  IX_init();
+  // 供判据 V3 取证：只有脚本真的执行到这一行，DOM 上才会出现这个属性。
+  // 值写成拼接，源码里不出现连续字面量——这正是 V3 要的「在 DOM、不在源码」。
+  document.documentElement.setAttribute('data-ix-ready', 'IX' + 'RDY');
+</script>

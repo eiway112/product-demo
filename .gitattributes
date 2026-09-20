@@ -1,0 +1,14 @@
+# 文本文件一律以 LF 入库、以 LF 检出。
+#
+# 为什么要显式钉住：本仓的判据会做逐字节回读与替换计数校验，行尾若随各人本机的
+# core.autocrlf 漂移，「回读一致」就会变成假绿——看起来验证过了，其实验的是另一份内容。
+* text=auto eol=lf
+
+# 二进制素材不做行尾转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.pdf binary
+*.zip binary

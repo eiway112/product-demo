@@ -1,0 +1,73 @@
+{
+  "name": "product-demo",
+  "version": "1.8.0",
+  "owner": "eiway112",
+  "updated_at": "2026-09-20",
+  "status": "release-candidate",
+  "maturity_tier": "usable",
+  "lifecycle_stage": "local-ready-pending-publish",
+  "context_budget_tier": "library",
+  "review_cadence": "as-needed",
+  "skill_archetype": "pipeline",
+  "license": "MIT",
+  "repository_name": "product-demo",
+  "repository_url": "",
+  "target_platforms": [
+    "agent-skills-compatible"
+  ],
+  "compatibility_evidence": {
+    "design_conformance": [
+      "agent-skills-spec",
+      "zero-third-party-runtime-deps"
+    ],
+    "package_install_simulation": [
+      "local-copy"
+    ],
+    "native_tested": [
+      {
+        "operating_system": "Windows",
+        "python": [
+          "3.13.14"
+        ],
+        "environment": "local skill workspace",
+        "browser": "Chrome (headless=new)",
+        "scope": "full pipeline on bundled profiles (profiles/_示例, profiles/_示例-带图, profiles/_示例-inline): build, offline checks, browser checks with screenshot, negative injection, body cleanliness, release gate",
+        "evidence": "2026-09-20 本机实测（v1.7.0）：_示例 离线 PASS 24 / FAIL 0 / SKIP 3、带 chrome+js-value PASS 28 / SKIP 3、带 chrome+shot PASS 29 / SKIP 2；_示例-带图 离线 25 / 0 / 2、带 chrome+shot 30 / 0 / 1；_示例-inline（inline 装配）离线 24 / 0 / 3、带 chrome+shot 29 / 0 / 2，均为 0 FAIL；负向测试 29 条用例 0 问题（_示例 22 通过 7 跳过 / _示例-带图 24 通过 5 跳过 / _示例-inline 22 通过 7 跳过），其中 V9（关键数字回指）与 I4（装配位置）为本版新增注入；CY 覆盖率 21 条判据条条有注入证明；判据单测 18/18；本体扫描 0 命中"
+      }
+    ],
+    "local_only_native_evidence": [
+      "本机私有验证，不计入对外能力证据（2026-09-20 收口，v1.7.0 数字同步）：真实产品配置 profiles/prefab-agent 实测离线 26 / 0 / 1、带 chrome+shot 31 / 0 / 0、负向测试 29 条用例 25 通过 4 跳过（V9 与 I4 两条新增注入在它上面都真的被拦下）。该配置随 profiles/* 被 .gitignore 排除、不随库发布，干净克隆里没有它——任何人无法复现，故不作为能力声明。它证明的只是本机链路对一份真实内容包跑通；「换产品时本体零改动」这条能力由三份随库示例（计算型 / 能力型 / inline 装配）承载，不依赖它。",
+      "同批收口：真实产品配置的去向决策（是否进私有仓 / 交付后 bundle 备份）仍停在「已识别·已接受·待排期」，未在开源契约里落定；在此之前这两份配置零版本兜底，换机即失。"
+    ],
+    "missing_native_evidence": [
+      "Linux / macOS 上的完整链路未实测（路径与 chrome 可执行名可能不同）",
+      "CI 工作流已写入 .github/workflows/ci.yml，但从未在 GitHub 上真正跑过——首次运行结果未知",
+      "Chromium 系以外的浏览器内核未实测",
+      "规格型 / 流程型两类交互件模板仍未建（本仓如实标注，不造未验证资产）"
+    ]
+  },
+  "input_files": [
+    "随库入库的最小可复现配置：profiles/_示例/（无图·计算型）、profiles/_示例-带图/（带图·能力型）、profiles/_示例-inline/（交互件嵌正文）",
+    "新建产品配置的起点：profiles/_模板/"
+  ],
+  "output_contract": "README.md 的「四道机器闸门」+ assets/interaction_patterns.md 的 §三 交互件硬契约（C1–C7）",
+  "rollback_boundary": "删除本技能目录即可；出件器与判据脚本只读写命令行给出的路径，不向仓库其他位置写入。浏览器判据的探针副本落在系统临时目录的一次性子目录（mkdtemp），跑完即删；负向测试的中间产物落在成品同级目录 _negtest/，跑完自清。",
+  "factory_components": [
+    "SKILL.md",
+    "README.md",
+    "assets",
+    "profiles/_模板",
+    "profiles/_示例",
+    "profiles/_示例-带图",
+    "profiles/_示例-inline"
+  ],
+  "release_metadata": {
+    "license": "MIT",
+    "publishing_state": "local-only",
+    "remote_repository_created": false,
+    "release_tag_recommendation": "v1.8.0",
+    "publish_blockers": [
+      "远端仓尚未创建（manifest 的 repository_url 为空）"
+    ]
+  }
+}

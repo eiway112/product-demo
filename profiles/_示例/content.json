@@ -1,0 +1,23 @@
+{
+  "doc_title": "示例估算器 · 参数化估算演示",
+  "product_name": "示例估算器",
+  "header_tagline": "三个参数进 · 用量与成本出 · 全页可交互",
+  "hero_title": "把<b>手工估算</b>换成可对照的档位结果",
+  "hero_lead": "同一件事，手工估一遍和按档位对照一遍，差别不只在快慢——这页把中间过程摊开，让人看见数是怎么出来的。",
+  "brand": {
+    "primary": "#3A6EA5",
+    "brand_dark": "#2A5178",
+    "brand_light": "#EAF0F7",
+    "accent": "#D08A2C",
+    "ink": "#232A33",
+    "ink_2": "#5B6470",
+    "line": "#DCE3EB"
+  },
+  "interaction": {
+    "title": "换个规模看结果",
+    "sub": "三档规模，点开每一档，看主料、辅料、工时与综合单价怎么跟着变。",
+    "unit": "元/㎡",
+    "step_label": "规模"
+  },
+  "footer_note": "本页为 product-demo 技能自带的示例件；数值均为演示用虚拟值，不构成任何承诺"
+}

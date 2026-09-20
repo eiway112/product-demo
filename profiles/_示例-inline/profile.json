@@ -1,0 +1,23 @@
+{
+  "_说明": "本目录只验证一件事：interaction.position=inline —— 交互件按 sections.html 里 <!--INTERACTION--> 标记的位置原地插入，而不是像默认 front 那样提到所有分节之前。内容沿用 ../_示例/，因此两份成品应当只差交互件所在的位置。出件器的这个分支此前在仓内没有任何可跑输入（四份配置无一声明该字段），属于「有代码、从未被走过」的分支。",
+  "product": "示例估算器",
+  "vendor": "",
+  "audience_default": "客户",
+  "form_default": "单页滚动",
+  "content": "content.json",
+  "sections": "sections.html",
+  "interaction": {
+    "pattern": "calculator",
+    "data": "items.json",
+    "role": "evidence",
+    "_why": "形态仍按「档位→数值」定，配档位对照器（calculator），与 ../_示例/ 相同；差别只在装配位置：声明 inline 让它落在叙事中间（先讲清毛病，再给可玩的东西），用来验证「同一份交互件换个插入位置」这条路径确实被走过。",
+    "position": "inline"
+  },
+  "assets_dir": "",
+  "assets": {
+    "logo": "",
+    "hero": ""
+  },
+  "delivery_dir": "",
+  "footer_note": "本页为 product-demo 技能自带的示例件；数值均为演示用虚拟值，不构成任何承诺"
+}

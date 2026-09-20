@@ -1,0 +1,22 @@
+{
+  "_说明": "第二份随库入库的示例配置，用途单一：让「带图 + 能力型（catalog）」这条链路在干净克隆里也能被任何人复现。第一份示例（_示例/）刻意不配图、配计算型，于是 B2/V2 两条判据在干净克隆里永远列 SKIP、catalog 模板的可用性只有维护者本机能核——本目录把这两处补上。全虚构值，不含任何真实产品。",
+  "product": "示例资料库",
+  "vendor": "",
+  "audience_default": "客户",
+  "form_default": "单页滚动",
+  "content": "content.json",
+  "sections": "sections.html",
+  "interaction": {
+    "pattern": "catalog",
+    "data": "items.json",
+    "role": "evidence",
+    "_why": "本示例演示能力型：问题进 → 样例输出出。它的价值不在「一个可算的数」，而在「能把某一类事做对」——按交互形态分类表配样例演示器（catalog）。"
+  },
+  "assets_dir": "",
+  "assets": {
+    "logo": "logo.png",
+    "hero": "hero.png"
+  },
+  "delivery_dir": "",
+  "footer_note": "本页为 product-demo 技能自带的第二份示例件；数值与图片均为演示用虚拟内容，不构成任何承诺"
+}

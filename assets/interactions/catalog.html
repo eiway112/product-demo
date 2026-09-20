@@ -1,0 +1,84 @@
+<!--css-->
+<style>
+  /* 样例演示器（能力型：问题 → 样例输出）。样式只作用于 .ix- 前缀，不污染版式层 */
+  .ix-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px}
+  /* hover 要给得起「可点」的暗示：只换边框色太弱，加上抬升与投影。
+     .on 写在 :hover 之后——选中态的配色不该被悬停态盖掉。 */
+  .ix-card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;cursor:pointer;
+    transition:transform .25s ease,box-shadow .25s ease,background .3s ease,border-color .3s ease}
+  .ix-card:hover{border-color:var(--brand);transform:translateY(-3px);
+    box-shadow:0 10px 20px rgba(0,0,0,.13)}
+  .ix-card.on{background:var(--brand-light);border-color:var(--brand)}
+  .ix-card .t{font-weight:700;color:var(--brand-dark);font-size:15px;margin-bottom:4px}
+  .ix-card .d{font-size:12px;color:var(--ink-2)}
+  .ix-panel{border:1px solid var(--line);border-radius:10px;padding:20px 22px}
+  .ix-pt{font-size:18px;font-weight:700;color:var(--brand-dark);margin-bottom:4px}
+  .ix-step{font-size:12px;color:var(--ink-2);margin-bottom:10px}
+  .ix-body{font-size:14px;color:var(--ink-2);margin-bottom:14px}
+  .ix-pairs{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .ix-pair{display:grid;grid-template-columns:130px 1fr;border-top:1px solid var(--line)}
+  .ix-pair:first-child{border-top:none}
+  .ix-pair .k{background:#FAFBFE;color:var(--ink-2);font-size:13px;padding:10px 14px}
+  .ix-pair .v{font-size:14px;padding:10px 14px}
+  .ix-pair .v.good{color:#2E8B57;font-weight:700}
+  .ix-pair .v.watch{color:#B8860B;font-weight:700}
+  .ix-note{margin-top:14px;font-size:14px;background:#FAFBFE;border-left:4px solid var(--brand);padding:10px 14px}
+</style>
+<!--html-->
+<div class="ix-cards" id="ix-cards"></div>
+<div class="ix-panel">
+  <div class="ix-pt" id="ix-title">—</div>
+  <div class="ix-step" id="ix-step">—</div>
+  <div class="ix-body" id="ix-body">—</div>
+  <div class="ix-pairs" id="ix-pairs"></div>
+  <div class="ix-note" id="ix-note">—</div>
+</div>
+<!--js-->
+<script>
+  // 数据一律来自项目配置中的已实测数据集，禁止占位值
+  var IX_ITEMS = __IX_ITEMS__;
+  var IX_STEP_LABEL = __IX_STEP_LABEL__;
+
+  function IX_render(i){
+    var it=IX_ITEMS[i];
+    document.getElementById("ix-title").textContent = it.title;
+    document.getElementById("ix-body").textContent  = it.body || "";
+    document.getElementById("ix-step").textContent  =
+      (IX_STEP_LABEL || "") + " " + (i+1) + " / " + IX_ITEMS.length;
+    var box=document.getElementById("ix-pairs");
+    while(box.firstChild){box.removeChild(box.firstChild)}
+    var ms=it.metrics||[];
+    for(var k=0;k<ms.length;k++){
+      var m=ms[k];
+      var row=document.createElement("div");
+      row.className="ix-pair";
+      var key=document.createElement("div");
+      key.className="k"; key.textContent=m.label;
+      var val=document.createElement("div");
+      val.className="v"+(m.tone?" "+m.tone:""); val.textContent=m.value;
+      row.appendChild(key); row.appendChild(val);
+      box.appendChild(row);
+    }
+    document.getElementById("ix-note").innerHTML = it.note || "";
+    var cards=document.querySelectorAll(".ix-card");
+    for(var c=0;c<cards.length;c++){cards[c].classList.toggle("on", c===i)}
+  }
+  function IX_init(){
+    var host=document.getElementById("ix-cards");
+    for(var i=0;i<IX_ITEMS.length;i++){
+      var d=document.createElement("div");
+      d.className="ix-card"+(i===0?" on":"");
+      d.setAttribute("data-ix", i);
+      var t=document.createElement("div"); t.className="t"; t.textContent=IX_ITEMS[i].title;
+      var s=document.createElement("div"); s.className="d"; s.textContent=IX_ITEMS[i].short||"";
+      d.appendChild(t); d.appendChild(s);
+      d.addEventListener("click", function(){IX_render(+this.getAttribute("data-ix"))});
+      host.appendChild(d);
+    }
+    IX_render(0);
+  }
+  IX_init();
+  // 供判据 V3 取证：只有脚本真的执行到这一行，DOM 上才会出现这个属性。
+  // 值写成拼接，源码里不出现连续字面量——这正是 V3 要的「在 DOM、不在源码」。
+  document.documentElement.setAttribute('data-ix-ready', 'IX' + 'RDY');
+</script>

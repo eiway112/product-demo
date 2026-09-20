@@ -1,0 +1,22 @@
+{
+  "doc_title": "示例资料库 · 检索样例演示",
+  "product_name": "示例资料库",
+  "header_tagline": "一句话提问 · 给出处、给原文段、给边界",
+  "hero_title": "问一句，回一段<b>能指出处</b>的原文",
+  "hero_lead": "检索的价值不在「找到了几篇」，在「找到的那一段能不能直接引用」。这一页把三类真实提问的返回样例摊开，让人自己判断能不能用。",
+  "brand": {
+    "primary": "#4C7A5B",
+    "brand_dark": "#33573F",
+    "brand_light": "#EBF3EE",
+    "accent": "#C0703C",
+    "ink": "#232A33",
+    "ink_2": "#5B6470",
+    "line": "#DCE3EB"
+  },
+  "interaction": {
+    "title": "换个提问看返回什么",
+    "sub": "三类提问各一条，点开看它给出的原文段、出处与置信口径。",
+    "step_label": "提问"
+  },
+  "footer_note": "本页为 product-demo 技能自带的第二份示例件；数值与图片均为演示用虚拟内容，不构成任何承诺"
+}

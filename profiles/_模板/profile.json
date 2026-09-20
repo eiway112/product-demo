@@ -1,0 +1,24 @@
+{
+  "_说明": "把本目录整体复制成 profiles/<你的产品>/，再按本目录 README.md 的契约补齐其余内容包。product / vendor 一并用于本体清洁度扫描的词表（audit_body.py），填了就会拿它去查本体有没有被产品特化。",
+  "product": "",
+  "vendor": "",
+  "audience_default": "客户",
+  "form_default": "单页滚动",
+  "content": "content.json",
+  "sections": "sections.html",
+  "interaction": {
+    "pattern": "",
+    "data": "items.json",
+    "role": "evidence",
+    "_help": "pattern ∈ calculator（计算型，用档位对照器）/ catalog（能力型，用样例演示器）。规格型与流程型模板尚未构建，见 assets/interaction_patterns.md；定不出形态就不要配交互件，改在 sections.html 里放 data-role=\"gap\" 段说明。role 指该件落在哪个叙事位。"
+  },
+  "assets_dir": "",
+  "assets": {
+    "logo": "",
+    "hero": "",
+    "_help": "留空 = 该素材不出图（骨架里的 <!--ASSET:key--> 可选块会被整块移除，不算缺件）。填了文件名则必须真实存在于 assets_dir，否则出件中止。"
+  },
+  "delivery_dir": "",
+  "footer_note": "",
+  "_note": "品牌色与字体写在 content.json 的 brand 里——出件器只读那一份，本文件刻意不放 brand（两处都有会让「改了配色却不生效」变成一个查不出原因的坑）。本文件只放产品名、素材接线、交互形态与落点。换产品时整体替换本目录，技能本体不动。可运行的完整样例见 ../_示例/。"
+}
