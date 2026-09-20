@@ -16,11 +16,11 @@
 ```bash
 python assets/build_demo.py --profile profiles/_示例-带图/profile.json --out demo2.html
 python assets/check_demo.py demo2.html --profile profiles/_示例-带图/profile.json --img 2 \
-  --expect pass=24,fail=0,skip=1
+  --expect pass=25,fail=0,skip=2
 python assets/negative_test.py demo2.html --profile profiles/_示例-带图/profile.json --img 2
 python assets/check_demo.py demo2.html --profile profiles/_示例-带图/profile.json --img 2 \
   --chrome "<chromium 路径>" --js-value IXRDY --shot <png 路径> \
-  --expect pass=29,fail=0,skip=0
+  --expect pass=30,fail=0,skip=1
 ```
 
 （`--img 2`：本示例刻意配两张图，所以契约图数是 2。）
@@ -30,12 +30,12 @@ python assets/check_demo.py demo2.html --profile profiles/_示例-带图/profile
 
 | 命令 | 预期 |
 |---|---|
-| `build_demo` | 退出码 0，打印两行「素材 <key> <路径> sha256 …」，成品约 1.4 万字节，交互件 catalog，section 5 段 |
-| `check_demo`（离线） | `PASS 24 / FAIL 0 / SKIP 1`；唯一 SKIP 是浏览器那组（未给 `--chrome`） |
-| 带 `--chrome --js-value` | `PASS 28 / FAIL 0 / SKIP 1`（V8 交互往返也进来；V7 仍 SKIP，未请求截图） |
-| 再加 `--shot` | `PASS 29 / FAIL 0 / SKIP 0` |
-| `negative_test`（离线 / 带 `--chrome`） | 26 条用例全部被拦（离线 22 通过 4 跳过 / 带浏览器 26 通过 0 跳过）；B2 / V2 两条注入**真的执行**（有图可注），不再列 SKIP；V7 的空白截图注入在带浏览器那轮真跑并必须被拦下 |
-| `check_demo`（带 `--expect`） | `--expect pass=24,fail=0,skip=1` 成立——数字由机器断言，不是文档里的一句话 |
+| `build_demo` | 退出码 0，打印两行「素材 <key> <路径> sha256 …」，成品约 2.2 万字节，交互件 catalog，section 5 段 |
+| `check_demo`（离线） | `PASS 25 / FAIL 0 / SKIP 2`；两条 SKIP：V9（成品未渲染关键数字区）＋ 浏览器那组（未给 `--chrome`） |
+| 带 `--chrome --js-value` | `PASS 29 / FAIL 0 / SKIP 2`（V8 交互往返也进来；V7 仍 SKIP，未请求截图；另一条是 V9） |
+| 再加 `--shot` | `PASS 30 / FAIL 0 / SKIP 1`（唯一剩下的 SKIP 是 V9） |
+| `negative_test`（离线 / 带 `--chrome`） | 29 条用例，退出码 0（离线 24 通过 5 跳过 / 带浏览器 28 通过 1 跳过）；B2 / V2 两条注入**真的执行**（有图可注），不再列 SKIP；V7 的空白截图注入在带浏览器那轮真跑并必须被拦下 |
+| `check_demo`（带 `--expect`） | `--expect pass=25,fail=0,skip=2` 成立——数字由机器断言，不是文档里的一句话 |
 
 与 `_示例/` 的数字不同是正常的：本示例多两张图（V2 由 SKIP 变 PASS），少一条浏览器 SKIP。
 

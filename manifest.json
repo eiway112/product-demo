@@ -1,17 +1,17 @@
 {
   "name": "product-demo",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "owner": "eiway112",
   "updated_at": "2026-09-20",
-  "status": "release-candidate",
+  "status": "released",
   "maturity_tier": "usable",
-  "lifecycle_stage": "local-ready-pending-publish",
+  "lifecycle_stage": "published-open-source",
   "context_budget_tier": "library",
   "review_cadence": "as-needed",
   "skill_archetype": "pipeline",
   "license": "MIT",
   "repository_name": "product-demo",
-  "repository_url": "",
+  "repository_url": "https://github.com/eiway112/product-demo",
   "target_platforms": [
     "agent-skills-compatible"
   ],
@@ -63,11 +63,9 @@
   ],
   "release_metadata": {
     "license": "MIT",
-    "publishing_state": "local-only",
-    "remote_repository_created": false,
-    "release_tag_recommendation": "v1.8.0",
-    "publish_blockers": [
-      "远端仓尚未创建（manifest 的 repository_url 为空）"
-    ]
+    "publishing_state": "published-remote",
+    "remote_repository_created": true,
+    "release_tag_recommendation": "v1.8.1",
+    "publish_blockers": []
   }
 }

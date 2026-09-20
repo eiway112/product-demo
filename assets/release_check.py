@@ -106,7 +106,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--skill-dir', default=os.path.dirname(HERE))
     ap.add_argument('--runtime-dir', default='',
-                    help='宿主实际加载的运行态副本目录；缺省按 ~/.workbuddy/skills/<本技能名> 探测')
+                    help='宿主实际加载的运行态副本目录；缺省按 ~/.workbuddy/skills/<技能目录名> 探测')
     a = ap.parse_args()
     skill = os.path.abspath(a.skill_dir)
     ok, skip, fail = [], [], []
@@ -237,20 +237,23 @@ def main():
                   % len(EXAMPLE_PROFILES))
 
     # ---- RC6 源仓 ↔ 运行态副本一致 ----
-    # 宿主真正加载的是运行态副本（~/.workbuddy/skills/<技能名>/），不是本仓工作树；
+    # 宿主真正加载的是运行态副本（~/.workbuddy/skills/<技能目录名>/），不是本仓工作树；
     # 这两处之间的搬运目前靠人记得。实测过一次：副本落后 5 个 commit、12 份里 11 份内容不同、
     # release_check.py 在副本里整份不存在——于是「源仓改好了」不等于「用户用上了」。
     # 副本找不到时必须 SKIP 并说明，不许静默放绿：看不见不等于一致。
+    # 探测路径只算一处：SKIP 文案里报给人的路径，必须与实际找过的那处是同一处。
+    # 早先这里在「探测」和「报错」两处各拼一遍——一处用 basename、一处留着 <本技能名>
+    # 没替换，于是报错指的路根本不是刚才找过的路。同一事实两份来源迟早分叉，
+    # 这个毛病本仓在别处已经付过学费（示例清单、文本口径、NEEDS_ARG）。
+    guess = os.path.join(os.path.expanduser('~'), '.workbuddy', 'skills',
+                         os.path.basename(skill))
     runtime = os.path.abspath(a.runtime_dir) if a.runtime_dir else ''
     if not runtime:
-        cand = os.path.join(os.path.expanduser('~'), '.workbuddy', 'skills',
-                            os.path.basename(skill))
-        runtime = cand if os.path.isdir(cand) else ''
+        runtime = guess if os.path.isdir(guess) else ''
     if not runtime or not os.path.isdir(runtime):
         skip.append('RC6 未找到运行态副本（找过 %s），本次未核——'
                     '被宿主加载的是副本，与源仓不一致就等于改动没生效'
-                    % (runtime or os.path.join(os.path.expanduser('~'),
-                                               '.workbuddy', 'skills', '<本技能名>')))
+                    % (runtime or guess))
     elif os.path.abspath(runtime) == os.path.abspath(skill):
         skip.append('RC6 本次就跑在运行态目录里，源仓与副本同一处，未核')
     else:

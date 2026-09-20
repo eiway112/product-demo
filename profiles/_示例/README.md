@@ -16,9 +16,9 @@
 ```bash
 python assets/build_demo.py --profile profiles/_示例/profile.json --out demo.html
 python assets/check_demo.py demo.html --profile profiles/_示例/profile.json --img 0 \
-  --expect pass=23,fail=0,skip=2
+  --expect pass=24,fail=0,skip=3
 python assets/check_demo.py demo.html --profile profiles/_示例/profile.json --img 0 \
-  --chrome "<chromium 路径>" --js-value IXRDY --expect pass=27,fail=0,skip=2
+  --chrome "<chromium 路径>" --js-value IXRDY --expect pass=28,fail=0,skip=3
 python assets/negative_test.py demo.html --profile profiles/_示例/profile.json --img 0
 python assets/negative_test.py demo.html --profile profiles/_示例/profile.json --img 0 \
   --chrome "<chromium 路径>" --js-value IXRDY
@@ -33,11 +33,11 @@ python assets/audit_body.py --self-test
 
 | 命令 | 预期 | 怎么看 |
 |---|---|---|
-| `build_demo` | 退出码 0，打印「出件：…（约 14000 字节，交互件 calculator，section 5 段）」 | 字节数不必逐字节对，`section 5 段` 和 `calculator` 必须对 |
-| `check_demo`（离线） | `PASS 23 / FAIL 0 / SKIP 2` | 两条 SKIP：V2（本示例无图，无可判对象）＋整组浏览器判据（没给 `--chrome`） |
-| `check_demo`（带 `--chrome --js-value IXRDY`） | `PASS 27 / FAIL 0 / SKIP 2` | 浏览器组 5 条（B5/V3/V5/V7/V8）里跑掉 4 条，只剩 V7 列 SKIP（没请求截图）。要连 V7 一起跑，再加 `--shot <任意 png 路径>`（跑完自行删除），那时是 `PASS 28 / FAIL 0 / SKIP 1`（剩下那条 SKIP 是无图的 V2） |
-| `negative_test`（离线） | `通过 20 / 问题 0 / 跳过 6`，退出码 0 | 26 条用例里跳过 6 条：2 条本示例无图所致、4 条需 `--chrome`（含 V7 的空白截图注入） |
-| `negative_test`（带 `--chrome --js-value IXRDY`） | `通过 24 / 问题 0 / 跳过 2`，退出码 0 | 剩下 2 条跳过即「无图」那两条；V7 的空白截图注入在这里真跑并必须被拦下 |
+| `build_demo` | 退出码 0，打印「出件：…（约 2.2 万字节，交互件 calculator，section 5 段）」 | 字节数不必逐字节对，`section 5 段` 和 `calculator` 必须对 |
+| `check_demo`（离线） | `PASS 24 / FAIL 0 / SKIP 3` | 三条 SKIP：V2（本示例无图，无可判对象）＋ V9（成品未渲染关键数字区）＋ 整组浏览器判据（没给 `--chrome`） |
+| `check_demo`（带 `--chrome --js-value IXRDY`） | `PASS 28 / FAIL 0 / SKIP 3` | 浏览器组 5 条（B5/V3/V5/V7/V8）里跑掉 4 条，只剩 V7 列 SKIP（没请求截图）。要连 V7 一起跑，再加 `--shot <任意 png 路径>`（跑完自行删除），那时是 `PASS 29 / FAIL 0 / SKIP 2`（剩下的两条 SKIP 是无图的 V2 与本例无关键数字区的 V9） |
+| `negative_test`（离线） | `通过 22 / 问题 0 / 跳过 7`，退出码 0 | 29 条用例里跳过 7 条：2 条本示例无图所致、1 条本例没有关键数字区（V9 注入点）、4 条需 `--chrome`（含 V7 的空白截图注入） |
+| `negative_test`（带 `--chrome --js-value IXRDY`） | `通过 26 / 问题 0 / 跳过 3`，退出码 0 | 剩下 3 条跳过即「无图」2 条 +「无关键数字区」1 条；V7 的空白截图注入在这里真跑并必须被拦下 |
 | `audit_body.py` | 退出码 0。判定行**分两种**：本机（`profiles/` 下有真实产品配置）是 `判定：PASS（命中 0）`；干净克隆里是 `判定：PASS（仅结构签名与 C5；产品词判据无判别力）` | 干净克隆里词表必然为空——这条判据会**明说自己没判别力**，而不是印一个裸 `PASS`。看到那句限定语是正常的，不是故障 |
 | `audit_body.py --self-test` | 三族分列，各达标，`自检结论：PASS` | 产品词族会显示「无词表 0 条／给词表 1 条」 |
 

@@ -42,11 +42,15 @@ python assets/audit_body.py
 python assets/audit_body.py --self-test
 ```
 
-**每一步的预期输出（含具体数字）写在 `profiles/_示例/README.md` 与
-`profiles/_示例-带图/README.md`。** 跑完对一遍——文档里的数字若与实测不符，改文档，别改实测。
+**每一步的预期输出（含具体数字）写在三份示例各自的 `README.md` 里——
+`profiles/_示例/`、`profiles/_示例-带图/`、`profiles/_示例-inline/`。**
+跑完对一遍——文档里的数字若与实测不符，改文档，别改实测。
 
-第二份示例（`_示例-带图/`）也要跑一遍：它带图、走 catalog 形态，
-B2 / V2 的注入点在它上面才真的执行得到（`--img 2`）。
+另外两份示例也要各跑一遍，它们各补一个盲区：
+
+- `_示例-带图/`（带图、catalog 形态，`--img 2`）：B2 / V2 的注入点在它上面才真的执行得到；
+- `_示例-inline/`（交互件嵌在正文里）：出件器的 inline 分支此前在仓内没有任何配置声明过，
+  属于「有代码、从未被走过」；判据 I4 会比对声明位置与成品里交互件实际的次序，挪错位置必 FAIL。
 
 ## 本体与产品配置的边界
 
@@ -54,7 +58,7 @@ B2 / V2 的注入点在它上面才真的执行得到（`--img 2`）。
 |---|---|---|
 | `SKILL.md` + `assets/**` | **本体** | 跨产品不动。新增产品后 `git diff --stat -- SKILL.md assets/` 应为 0 行 |
 | `profiles/<产品>/` | **产品配置** | 默认不入库（`.gitignore` 排除）；由使用者自行纳管版本 |
-| `profiles/_模板/`、`profiles/_示例/` | **基础设施** | 下划线前缀即标记，随库入库 |
+| `profiles/_*/`（`_模板/` + 三份示例） | **基础设施** | 下划线前缀即标记，随库入库 |
 
 **本体里不得出现任何具体产品名**。这条不靠自觉，靠 `assets/audit_body.py` 扫（词表自动从
 `profiles/*/profile.json` 收集，脚本自身不写死任何产品名）——以及结构签名：一个产品名都不出现，
@@ -72,20 +76,20 @@ B2 / V2 的注入点在它上面才真的执行得到（`--img 2`）。
 
 ## 发布前检查
 
-前 4 条由 `python assets/release_check.py` 机器判（它会 FAIL，不靠勾选）：
+RC1–RC6 全部由 `python assets/release_check.py` 机器判（它会 FAIL，不靠勾选）：
 
 - [ ] **RC1** `SKILL.md` frontmatter 的 `version` == `manifest.json` 的 `version` == `CHANGELOG` 顶部
       ——技能平台读的是 `SKILL.md` 的 frontmatter。v1.4.0 之前 SKILL.md 写着 1.2.0 而 manifest
       是 1.3.0，而当时的发布清单里没有一条会拦住它（release_check 的 RC1 就是为此装的）
 - [ ] **RC2** manifest 登记的 factory_components 全部存在
 - [ ] **RC3** 仓内无 `__pycache__` / `_negtest` / 临时成品残留
-- [ ] **RC4 / RC5** 两份示例配置内容包齐全 **且真的会入库**
+- [ ] **RC4 / RC5** 三份示例配置内容包齐全 **且真的会入库**
       ——RC4 只查「文件在不在磁盘上」，RC5 查「`.gitignore` 会不会把它排除」。
       两者缺一就会出现「本地有、干净克隆没有」：`_示例-带图/` 就是这样被漏掉的。
       **新增下划线开头的示例目录时，放行规则必须是模式化的（`!profiles/_*/`），不要去枚举名字**
 - [ ] `manifest.json` 的 `version` / `updated_at` / `repository_url` 已更新
 - [ ] `CHANGELOG.md` 记了本次变更（只记已发生的）
-- [ ] 上面每条命令全绿，且两份示例 README 里的预期数字与实测一致
+- [ ] 上面每条命令全绿，且三份示例 README 里的预期数字与实测一致
 - [ ] `python assets/audit_body.py` 报 0 命中
 - [ ] `python assets/audit_body.py --self-test` 三族各自被证明有效
 - [ ] `python assets/check_demo.py --self-test`（注入动不了它的那些断言）
