@@ -90,8 +90,16 @@ def _rel_set(root):
 
 
 def _git_lag(src, run):
-    """两边都是 git 仓时报「副本落后几个 commit」；判不了就返回空串（不冒充结论）。"""
+    """副本是「纯文件副本，不含 .git」（见 SKILL.md 第 13 条 / commit 2ae5215 运行态去 git 化）。
+    只有副本目录本身是一个独立的 git 仓根时，「副本落后几个 commit」才有意义；
+    若副本目录向上走到了宿主 skills 仓（兜底仓），那条 HEAD 不是副本自己的记录——
+    必须返回空串，不冒充结论（判不了就返回空串，是本函数铁律）。"""
     try:
+        tr = subprocess.run(['git', 'rev-parse', '--show-toplevel'],
+                            cwd=run, capture_output=True, text=True, timeout=30)
+        root = tr.stdout.strip()
+        if tr.returncode or not root or os.path.abspath(root) != os.path.abspath(run):
+            return ''  # 副本不是独立 git 仓根 → 没有"自己的 git 记录"，不冒充
         hs = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=src,
                             capture_output=True, text=True, timeout=30)
         hr = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=run,

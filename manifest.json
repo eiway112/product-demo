@@ -1,8 +1,8 @@
 {
   "name": "product-demo",
-  "version": "1.8.4",
+  "version": "1.8.5",
   "owner": "eiway112",
-  "updated_at": "2026-09-24",
+  "updated_at": "2026-09-25",
   "status": "released",
   "maturity_tier": "usable",
   "lifecycle_stage": "published-open-source",
@@ -74,7 +74,7 @@
     "license": "MIT",
     "publishing_state": "published-remote",
     "remote_repository_created": true,
-    "release_tag_recommendation": "v1.8.4",
+    "release_tag_recommendation": "v1.8.5",
     "publish_blockers": []
   }
 }
